@@ -1,0 +1,62 @@
+#config.ini file directory
+config_directory: "/home/LabPC_10/WorkingDir/20220621_ERBrain_S1375um_readoutChanges_V2.0/"
+
+#acquisition mode (qdc,tot)
+mode: "qdc"
+
+#HW trigger (True/False)
+hw_trigger: False
+
+#acquistion time
+time: 30
+
+#data process (coincidence/singles/group), (binary, txt, root)
+data_type: group
+data_format: binary
+fraction: 100
+hits: 64
+
+#output base name and directory
+out_name: "20220623_ModulevsPix3x3x10_FloodBrain_S13_AllE15Att110sBLUESingle"
+out_directory: "/home/LabPC_10/WorkingDir/20220621_ERBrain_S1375um_readoutChanges_V2.0/"
+
+#offset voltage
+prebreak_voltage: 40.0
+
+#Vbreak
+break_voltage: 50.0
+
+#over-voltage list
+over_voltage: [3.0, 4.0, 5.0]
+
+#Timing chip_ID
+chip_ID: [1]
+
+#Timing channel_list
+time_channels: [102, 71, 73, 78, 126, 69, 122, 76, 125, 67, 123, 74, 114, 64, 121, 65, 98, 80, 97, 82, 100, 81, 99, 83, 101, 85, 103, 84, 105, 87, 104, 86] #real time channels
+#time_channels: [72, 79, 70,68, 77, 66, 75, 91, 116, 115, 118, 117, 120, 119, 124, 127, 89, 88, 90, 92, 93, 94, 95, 96, 107, 106, 108, 110, 109, 111, 112, 113] #energy time channels
+
+#Timing T1 threshold
+T1_time_th: [15]
+
+#Timing T2 threshold
+T2_time_th: [15]
+
+#Timing E threshold
+E_time_th: [2, 3, 4]
+
+#T1 threshold list
+T1_th: [15]
+
+#T2 threshold list
+T2_th: [20]
+
+#E threshold list
+E_th: [15]
+
+#TODO: add all required parameters needed 
+#reference detector
+#febdport_ref
+#vbias_ref
+#thresholds_ref
+
