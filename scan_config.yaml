@@ -1,6 +1,24 @@
 #config.ini file directory
 config_directory: "/home/LabPC_10/WorkingDir/20220621_ERBrain_S1375um_readoutChanges_V2.0/"
 
+#output base name and directory
+out_name: "20220623_ModulevsPix3x3x10_FloodBrain_S13_AllE15Att110sBLUESingle"
+out_directory: "/home/LabPC_10/WorkingDir/20220621_ERBrain_S1375um_readoutChanges_V2.0/"
+
+#FEM being used (FEM128/FEM256)
+FEM: "FEM128"
+
+#FEB/D being used (FEBD1k/FEBD8k)
+FEBD: "FEBD1k"
+
+# Indicate reference detector:
+# 1- FEB/D portID if there is, -1 if no reference detector is present (always starting from 0)
+# 2- Voltages [Vpre-break, Vbreak, Vov]
+# 3- Thresholds
+ref_det_febd: 2
+ref_det_volt: [30, 37, 40]
+ref_det_ths: [30, 35, 40]
+
 #acquisition mode (qdc,tot)
 mode: "qdc"
 
@@ -15,10 +33,6 @@ data_type: group
 data_format: binary
 fraction: 100
 hits: 64
-
-#output base name and directory
-out_name: "20220623_ModulevsPix3x3x10_FloodBrain_S13_AllE15Att110sBLUESingle"
-out_directory: "/home/LabPC_10/WorkingDir/20220621_ERBrain_S1375um_readoutChanges_V2.0/"
 
 #offset voltage
 prebreak_voltage: 40.0
@@ -53,10 +67,4 @@ T2_th: [20]
 
 #E threshold list
 E_th: [15]
-
-#TODO: add all required parameters needed 
-#reference detector
-#febdport_ref
-#vbias_ref
-#thresholds_ref
 
