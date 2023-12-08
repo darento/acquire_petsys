@@ -1,9 +1,9 @@
 #config.ini file directory
-config_directory: "/home/LabPC_10/WorkingDir/20220621_ERBrain_S1375um_readoutChanges_V2.0/"
+config_directory: "C:\\Users\\david\\Desktop\\PyCodes\\github\\PETsyScan\\test_data\\FEM128\\"
 
 #output base name and directory
-out_name: "20220623_ModulevsPix3x3x10_FloodBrain_S13_AllE15Att110sBLUESingle"
-out_directory: "/home/LabPC_10/WorkingDir/20220621_ERBrain_S1375um_readoutChanges_V2.0/"
+out_name: "20230812_test"
+out_directory: "C:\\Users\\david\\Desktop\\PyCodes\\github\\PETsyScan\\test_data\\"
 
 #FEM being used (FEM128/FEM256)
 FEM: "FEM128"
@@ -11,13 +11,19 @@ FEM: "FEM128"
 #FEB/D being used (FEBD1k/FEBD8k)
 FEBD: "FEBD1k"
 
+#BIAS board mezzanine (BIAS_16P, BIAS_32P, BIAS_64P)
+BIAS_board: "BIAS_16P"
+
 # Indicate reference detector:
 # 1- FEB/D portID if there is, -1 if no reference detector is present (always starting from 0)
 # 2- Voltages [Vpre-break, Vbreak, Vov]
 # 3- Thresholds
-ref_det_febd: 2
-ref_det_volt: [30, 37, 40]
+ref_det_febd: 7
+ref_det_volt: [30, 37, 3]
 ref_det_ths: [30, 35, 40]
+
+# bias_map.csv location
+bias_file: "C:\\Users\\david\\Desktop\\PyCodes\\github\\PETsyScan\\test_data\\bias_map_corrected.csv"
 
 #acquisition mode (qdc,tot)
 mode: "qdc"
@@ -41,7 +47,7 @@ prebreak_voltage: 40.0
 break_voltage: 50.0
 
 #over-voltage list
-over_voltage: [3.0, 4.0, 5.0]
+over_voltage: 5
 
 #Timing chip_ID
 chip_ID: [1]

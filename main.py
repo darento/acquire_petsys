@@ -11,15 +11,34 @@ Arguments:
 from docopt import docopt
 import yaml
 
-from src.util import set_fixedvoltages
-from src.util import set_Ethreshold
-from src.util import write_disc_settings
-from src.util import set_T2threshold
-from src.util import set_overvoltage
-from src.util import write_bias_settings
-from src.util import set_T1threshold
-from src.util import acquire_command
-from src.util import process_command
+from src.reader import read_bias_map
+from src.util   import set_fixedvoltages
+from src.util   import set_Ethreshold
+from src.util   import write_disc_settings
+from src.util   import set_T2threshold
+from src.util   import set_overvoltage
+from src.util   import write_bias_settings
+from src.util   import set_T1threshold
+from src.util   import acquire_command
+from src.util   import process_command
+
+
+def get_ref_params(yaml_dict):
+    bias_map_dict = read_bias_map(yaml_dict["bias_file"])
+    FEM           = yaml_dict["FEM"]
+    FEBD          = yaml_dict["FEBD"]
+    BIAS_board    = yaml_dict["BIAS_board"]
+    #ref detector if there is some
+    ref_det_febd = yaml_dict["ref_det_febd"]
+    if ref_det_febd != -1:
+        #bias_params: list of tuples consisting of [(slotID, channelID)]
+        bias_params = bias_map_dict[FEBD][BIAS_board][ref_det_febd]   
+        num_ASICs = 2 if FEM == "FEM128" else 4
+        disc_params = [ref_det_febd * num_ASICs, ref_det_febd * num_ASICs + 1]
+        return bias_params, disc_params
+    else:
+        return None, None
+
 
 if __name__ == "__main__":
     args = docopt(__doc__)
@@ -28,13 +47,18 @@ if __name__ == "__main__":
 
     with open(yaml_conf) as yaml_reader:
         yaml_dict = yaml.safe_load(yaml_reader)
+    dir_path      = yaml_dict["config_directory"]
 
-    print(yaml_dict)
+    bias_params, disc_params = get_ref_params(yaml_dict)
+    print(bias_params, disc_params)
     exit(0)
 
-    dictionary = yaml.safe_load(fd)
-    print("----------")
-    bias_df = set_fixedvoltages(dictionary)
+    voltages    = yaml_dict["over_voltage"]
+    bias_df     = set_fixedvoltages(yaml_dict, dir_path)
+    new_bias_df = set_overvoltage(bias_df, voltages)
+    print(bias_df)
+    print(new_bias_df)
+    
     voltages = dictionary["over_voltage"]
     T1_th = dictionary["T1_th"][0]
     T2_th = dictionary["T2_th"][0]

@@ -48,6 +48,7 @@ def read_bias_map(bias_file: str) -> dict:
                 for portID in bias_map_dict[febd][bias_mez].keys():
                     dac_chs = bias_map_dict[febd][bias_mez][portID]
                     bias_map_dict[febd][bias_mez][portID] = list(set(dac_chs))
+        print(f'Loaded bias_map.csv...')
         return bias_map_dict
 
 if __name__ == "__main__":

@@ -1,19 +1,19 @@
 import os
 import pandas as pd
+import shutil
 
-def set_fixedvoltages(dictionary):
-    bias_settings_path = dictionary["config_directory"]
+def set_fixedvoltages(dictionary, bias_settings_path):
     bias_settings_file_name = "bias_settings.tsv"
     bias_df = pd.read_csv(bias_settings_path + bias_settings_file_name, sep = '\t')
     bias_df["Pre-breakdown"] = dictionary["prebreak_voltage"]
     bias_df["Breakdown"] = dictionary["break_voltage"]
 
-    #rename bias_settings.tsv in case something went wrong
+    #create a copy of bias_settings.tsv in case something went wrong
     bias_settings_file_name_backup = "bias_settings_backup.tsv"
-    os.rename(bias_settings_path + bias_settings_file_name, bias_settings_path + bias_settings_file_name_backup)
-    return bias_df
+    shutil.copyfile(bias_settings_path + bias_settings_file_name, bias_settings_path + bias_settings_file_name_backup)
+    return bias_df 
 
-def set_overvoltage(bias_df, voltage):
+def set_overvoltage(bias_df, voltage, bias_map, ref_det = -1, ref_voltage = [0, 0, 0]):
     bias_df["Overvoltage"] = voltage
     return bias_df
 
