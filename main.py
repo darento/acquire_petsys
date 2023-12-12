@@ -10,15 +10,11 @@ Arguments:
 """
 from docopt import docopt
 import yaml
+import pandas as pd
 
 from src.reader import read_bias_map
-from src.util   import set_fixedvoltages
-from src.util   import set_Ethreshold
-from src.util   import write_disc_settings
-from src.util   import set_T2threshold
-from src.util   import set_overvoltage
-from src.util   import write_bias_settings
-from src.util   import set_T1threshold
+from src.util   import BiasSettings
+from src.util   import DiscSettings
 from src.util   import acquire_command
 from src.util   import process_command
 
@@ -37,10 +33,11 @@ def get_ref_params(yaml_dict):
         disc_params = [ref_det_febd * num_ASICs, ref_det_febd * num_ASICs + 1]
         return bias_params, disc_params
     else:
-        return None, None
+        return [], []
 
 
 if __name__ == "__main__":
+    pd.set_option('display.max_rows', None)
     args = docopt(__doc__)
     yaml_conf = args["YAMLCONF"]
 
@@ -49,23 +46,16 @@ if __name__ == "__main__":
         yaml_dict = yaml.safe_load(yaml_reader)
     dir_path      = yaml_dict["config_directory"]
 
-    bias_params, disc_params = get_ref_params(yaml_dict)
-    print(bias_params, disc_params)
-    exit(0)
-
-    voltages    = yaml_dict["over_voltage"]
-    bias_df     = set_fixedvoltages(yaml_dict, dir_path)
-    new_bias_df = set_overvoltage(bias_df, voltages)
-    print(bias_df)
-    print(new_bias_df)
+    # get the bias and discriminator settings if they exist, otherwise a empty list is returned
+    bias_ref_params, disc_ref_params = get_ref_params(yaml_dict)
     
-    voltages = dictionary["over_voltage"]
-    T1_th = dictionary["T1_th"][0]
-    T2_th = dictionary["T2_th"][0]
-    E_th = dictionary["E_th"][0]
-    time_T1 = dictionary["T1_time_th"]
-    time_T2 = dictionary["T2_time_th"]
-    time_E = dictionary["E_time_th"]
+    # create the bias and discriminator settings objects with the reference detector parameters
+    bias_settings = BiasSettings(yaml_dict, bias_ref_params)
+    bias_settings.set_fixedvoltages()
+    disc_settings = DiscSettings(yaml_dict, disc_ref_params)
+    disc_settings.set_fixedthresholds()
+
+    voltages = yaml_dict["voltages"]
     for v in voltages:
         for e in time_E:
             disc_df = set_Ethreshold(dictionary, E_th, e)

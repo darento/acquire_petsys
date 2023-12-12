@@ -2,88 +2,75 @@ import os
 import pandas as pd
 import shutil
 
-def set_fixedvoltages(dictionary, bias_settings_path):
-    bias_settings_file_name = "bias_settings.tsv"
-    bias_df = pd.read_csv(bias_settings_path + bias_settings_file_name, sep = '\t')
-    bias_df["Pre-breakdown"] = dictionary["prebreak_voltage"]
-    bias_df["Breakdown"] = dictionary["break_voltage"]
 
-    #create a copy of bias_settings.tsv in case something went wrong
-    bias_settings_file_name_backup = "bias_settings_backup.tsv"
-    shutil.copyfile(bias_settings_path + bias_settings_file_name, bias_settings_path + bias_settings_file_name_backup)
-    return bias_df 
 
-def set_overvoltage(bias_df, voltage, bias_map, ref_det = -1, ref_voltage = [0, 0, 0]):
-    bias_df["Overvoltage"] = voltage
-    return bias_df
+class BiasSettings:
+    def __init__(self, dictionary, bias_ref_params):
+        self.dictionary = dictionary
+        self.bias_ref_params = set(bias_ref_params)
+        self.bias_settings_path = dictionary["config_directory"]
+        self.bias_settings_file_name = "bias_settings.tsv"
+        self.bias_df = pd.read_csv(self.bias_settings_path + self.bias_settings_file_name, sep = '\t')
 
-def write_bias_settings(bias_df, dictionary):
-    new_bias_settings_path = dictionary["config_directory"]
-    new_bias_settings_file_name = "bias_settings.tsv"
-    bias_df.to_csv(new_bias_settings_path + new_bias_settings_file_name, index = False, sep = '\t')
+    def set_fixedvoltages(self):
+        self.bias_df["Pre-breakdown"] = self.dictionary["prebreak_voltage"]
+        self.bias_df["Breakdown"] = self.dictionary["break_voltage"]
+        if self.bias_ref_params:
+            ref_det_volt = self.dictionary["ref_det_volt"]
+            for slot, channel in self.bias_ref_params:
+                self.bias_df.loc[(self.bias_df['slotID'] == slot) & (self.bias_df['channelID'] == channel), 'Pre-breakdown'] = ref_det_volt[0]
+                self.bias_df.loc[(self.bias_df['slotID'] == slot) & (self.bias_df['channelID'] == channel), 'Breakdown'] = ref_det_volt[1]
+                self.bias_df.loc[(self.bias_df['slotID'] == slot) & (self.bias_df['channelID'] == channel), 'Overvoltage'] = ref_det_volt[2]
 
-def set_T1threshold(dictionary, T1_th, T1_time):
-    disc_settings_path = dictionary["config_directory"]
-    disc_settings_file_name = "disc_settings.tsv"
-    disc_df = pd.read_csv(disc_settings_path + disc_settings_file_name, sep = '\t')
-    disc_df["vth_t1"] = T1_th
+    def set_overvoltage(self, voltage):
+        self.bias_df.loc[~self.bias_df[['slotID', 'channelID']].apply(tuple, axis=1).isin(self.bias_ref_params), 'Overvoltage'] = voltage
 
-    chip_ID = dictionary["chip_ID"]
-    time_ID = dictionary["time_channels"]
-    time_T1 = dictionary["T1_time_th"][0]
+    def write_bias_settings(self):
+        new_bias_settings_path = self.dictionary["config_directory"]
+        new_bias_settings_file_name = "bias_settings.tsv"
+        full_path = new_bias_settings_path + new_bias_settings_file_name
 
-    for chip in chip_ID:
-        for tID in time_ID:
-            tID_petsys = tID - 64 * chip
-            disc_df.loc[(disc_df['chipID'] == chip) & (disc_df['channelID'] ==  tID_petsys), 'vth_t1'] = T1_time
+        # Create a backup of the original file
+        shutil.copy(full_path, full_path.replace(".tsv", "_backup.tsv"))
 
-    #rename bias_settings.tsv in case something went wrong
-    disc_settings_file_name_backup = "disc_settings_backup.tsv"
-    os.rename(disc_settings_path + disc_settings_file_name, disc_settings_path + disc_settings_file_name_backup)
-    return disc_df
+        # Write the new bias settings
+        self.bias_df.to_csv(full_path, index = False, sep = '\t')
 
-def set_T2threshold(dictionary, T2_th, T2_time):
-    disc_settings_path = dictionary["config_directory"]
-    disc_settings_file_name = "disc_settings.tsv"
-    disc_df = pd.read_csv(disc_settings_path + disc_settings_file_name, sep = '\t')
-    disc_df["vth_t2"] = T2_th
 
-    chip_ID = dictionary["chip_ID"]
-    time_ID = dictionary["time_channels"]
+class DiscSettings:
+    
+    def __init__(self, dictionary, disc_ref_params):
+        self.dictionary = dictionary
+        self.disc_ref_params = set(disc_ref_params)
+        self.disc_settings_path = dictionary["config_directory"]
+        self.disc_settings_file_name = "disc_settings.tsv"
+        self.disc_df = pd.read_csv(self.disc_settings_path + self.disc_settings_file_name, sep = '\t')
+        
+    def set_fixedthresholds(self):
+        self.disc_df["vth_t1"] = self.dictionary["vth_t1"][0]
+        self.disc_df["vth_t2"] = self.dictionary["vth_t2"][0]
+        self.disc_df["vth_e"] = self.dictionary["vth_e"][0]
+        if self.disc_ref_params:
+            ref_det_th = self.dictionary["ref_det_ths"]
+            for chipID in self.disc_ref_params:
+                self.disc_df.loc[(self.disc_df['chipID'] == chipID), 'vth_t1'] = ref_det_th[0]
+                self.disc_df.loc[(self.disc_df['chipID'] == chipID), 'vth_t2'] = ref_det_th[1]
+                self.disc_df.loc[(self.disc_df['chipID'] == chipID), 'vth_e'] = ref_det_th[2]
 
-    for chip in chip_ID:
-        for tID in time_ID:
-            tID_petsys = tID - 64 * chip
-            disc_df.loc[(disc_df['chipID'] == chip) & (disc_df['channelID'] ==  tID_petsys), 'vth_t2'] = T2_time
+    def set_threshold(self, threshold, key):
+        self.disc_df.loc[~self.disc_df[['chipID']].isin(self.disc_ref_params).any(1), key] = threshold
+    
+    def write_disc_settings(self):
+        new_disc_settings_path = self.dictionary["config_directory"]
+        new_disc_settings_file_name = "disc_settings.tsv"
+        full_path = new_disc_settings_path + new_disc_settings_file_name
 
-    #rename bias_settings.tsv in case something went wrong
-    disc_settings_file_name_backup = "disc_settings_backup.tsv"
-    os.rename(disc_settings_path + disc_settings_file_name, disc_settings_path + disc_settings_file_name_backup)
-    return disc_df
+        # Create a backup of the original file
+        shutil.copy(full_path, full_path.replace(".tsv", "_backup.tsv"))
 
-def set_Ethreshold(dictionary, E_th, E_time):
-    disc_settings_path = dictionary["config_directory"]
-    disc_settings_file_name = "disc_settings.tsv"
-    disc_df = pd.read_csv(disc_settings_path + disc_settings_file_name, sep = '\t')
-    disc_df["vth_e"] = E_th
+        # Write the new discriminator settings
+        self.disc_df.to_csv(full_path, index = False, sep = '\t')
 
-    chip_ID = dictionary["chip_ID"]
-    time_ID = dictionary["time_channels"]
-
-    for chip in chip_ID:
-        for tID in time_ID:
-            tID_petsys = tID - 64 * chip
-            disc_df.loc[(disc_df['chipID'] == chip) & (disc_df['channelID'] ==  tID_petsys), 'vth_e'] = E_time
-
-    #rename bias_settings.tsv in case something went wrong
-    disc_settings_file_name_backup = "disc_settings_backup.tsv"
-    os.rename(disc_settings_path + disc_settings_file_name, disc_settings_path + disc_settings_file_name_backup)
-    return disc_df
-
-def write_disc_settings(disc_df, dictionary):
-    new_disc_settings_path = dictionary["config_directory"]
-    new_disc_settings_file_name = "disc_settings.tsv"
-    disc_df.to_csv(new_disc_settings_path + new_disc_settings_file_name, index = False, sep = '\t')
 
 def acquire_command(dictionary, full_out_name):
     if not os.path.isdir(dictionary["out_directory"]):
