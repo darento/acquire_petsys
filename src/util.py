@@ -72,36 +72,47 @@ class DiscSettings:
         self.disc_df.to_csv(full_path, index = False, sep = '\t')
 
 
-def acquire_command(dictionary, full_out_name):
-    if not os.path.isdir(dictionary["out_directory"]):
-        os.makedirs(dictionary["out_directory"])
-    if dictionary["hw_trigger"]:
-        hw_trigger = "--enable-hw-trigger"
-    else:
-        hw_trigger = ""
-    os.system("./acquire_sipm_data --config {} --mode {} --time {} -o {} {}".format(dictionary["config_directory"] + "config.ini",
-    dictionary["mode"], dictionary["time"], dictionary["out_directory"] + full_out_name, hw_trigger))
+class Commands:
+    def __init__(self, dictionary):
+        self.dictionary = dictionary
 
-def process_command(dictionary, full_out_name):
-    if dictionary["data_type"] == "coincidence":
-        sufix = "_coinc"
-        process_command = "./convert_raw_to_coincidence"
-    elif dictionary["data_type"] == "single":
-        sufix = "_single"
-        process_command = "./convert_raw_to_single"
-    elif dictionary["data_type"] == "group":
-        sufix = "_group"
-        process_command = "./convert_raw_to_group"
-    if dictionary["data_format"] == "txt":
-        output_format = ""
-        #sufix_2 = ".dat"
-    elif dictionary["data_format"] == "binary":
-        output_format = "--writeBinary"
-        #sufix_2 = ".ldat"
-    elif dictionary["data_format"] == "root":
-        output_format = "--writeRoot"
-        #sufix_2 = ".root"
-    process_out_name = full_out_name + sufix
-    print(process_out_name)
-    os.system("{} --config {} -i {} -o {} --writeMultipleHits {} {}".format(process_command, dictionary["config_directory"] + "config.ini",
-    dictionary["out_directory"] + full_out_name, dictionary["out_directory"] + process_out_name, dictionary["hits"], output_format))
+    def acquire_command(self, full_out_name):
+        if not os.path.isdir(self.dictionary["out_directory"]):
+            os.makedirs(self.dictionary["out_directory"])
+        hw_trigger = "--enable-hw-trigger" if self.dictionary["hw_trigger"] else ""
+
+        command = (
+            f"./acquire_sipm_data --config {self.dictionary['config_directory']}config.ini "
+            f"--mode {self.dictionary['mode']} --time {self.dictionary['time']} "
+            f"-o {self.dictionary['out_directory']}{full_out_name} {hw_trigger}"
+        )
+
+        print(command + "\n")
+        #os.system(command)
+
+    def process_command(self, full_out_name):
+        data_type_mapping = {
+            "coincidence": ("_coinc", "./convert_raw_to_coincidence"),
+            "single": ("_single", "./convert_raw_to_single"),
+            "group": ("_group", "./convert_raw_to_group")
+        }
+        data_format_mapping = {
+            "txt": "",
+            "binary": "--writeBinary",
+            "root": "--writeRoot"
+        }
+        sufix, process_command = data_type_mapping[self.dictionary["data_type"]]
+        output_format = data_format_mapping[self.dictionary["data_format"]]
+        process_out_name = full_out_name + sufix
+
+        command = (
+            f"{process_command} --config {self.dictionary['config_directory']}config.ini "
+            f"-i {self.dictionary['out_directory']}{full_out_name} "
+            f"-o {self.dictionary['out_directory']}{process_out_name} "
+            f"--writeMultipleHits {self.dictionary['hits']} {output_format}"
+        )
+        
+        print(command + "\n")
+        #os.system(command)
+    
+

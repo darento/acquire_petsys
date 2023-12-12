@@ -8,6 +8,7 @@ Arguments:
     YAMLCONF  File with all parameters to take into account in the scan.
 
 """
+import time
 from docopt import docopt
 import yaml
 import pandas as pd
@@ -15,8 +16,7 @@ import pandas as pd
 from src.reader import read_bias_map
 from src.util   import BiasSettings
 from src.util   import DiscSettings
-from src.util   import acquire_command
-from src.util   import process_command
+from src.util   import Commands
 
 
 def get_ref_params(yaml_dict):
@@ -55,20 +55,26 @@ if __name__ == "__main__":
     disc_settings = DiscSettings(yaml_dict, disc_ref_params)
     disc_settings.set_fixedthresholds()
 
-    voltages = yaml_dict["voltages"]
+    petsys_commands = Commands(yaml_dict)
+    voltages = yaml_dict["over_voltage"]
+    time_T1 = yaml_dict["vth_t1"]
+    time_T2 = yaml_dict["vth_t2"]
+    time_E = yaml_dict["vth_e"]
     for v in voltages:
-        for e in time_E:
-            disc_df = set_Ethreshold(dictionary, E_th, e)
-            write_disc_settings(disc_df, dictionary)
+        bias_df = bias_settings.bias_df.copy()
+        disc_df = disc_settings.disc_df.copy()
+        bias_df = bias_settings.set_overvoltage(v)
+        bias_settings.write_bias_settings()
+        for t1 in time_T1:
+            disc_df = disc_settings.set_threshold( t1, "vth_t1")
             for t2 in time_T2:
-                disc_df = set_T2threshold(dictionary, T2_th, t2)
-                write_disc_settings(disc_df, dictionary)
-                for t1 in time_T1:
-                    print("OV, T1, T2, E: {}, {}, {}, {}".format(v, t1, t2, e))
-                    bias_df = set_overvoltage(bias_df, v)
-                    write_bias_settings(bias_df, dictionary)
-                    disc_df = set_T1threshold(dictionary, T1_th, t1)
-                    write_disc_settings(disc_df, dictionary)
-                    full_out_name = dictionary["out_name"] + "_{}OV_{}T1_{}T2_{}E".format(v, t1, t2, e)
-                    acquire_command(dictionary, full_out_name)
-                    process_command(dictionary, full_out_name)
+                disc_df = disc_settings.set_threshold(t2, "vth_t2")
+                for e in time_E:
+                    disc_df = disc_settings.set_threshold(e, "vth_e")
+                    disc_settings.write_disc_settings()
+                    full_out_name = yaml_dict["out_name"] + "_{}OV_{}T1_{}T2_{}E".format(v, t1, t2, e)
+                    petsys_commands.acquire_command(full_out_name)
+                    petsys_commands.process_command(full_out_name)
+                    print(f"Setting bias to {v}V, T1 to {t1}, T2 to {t2}, E to {e}")
+                    print("------------------------------------------")
+                    time.sleep(3)
