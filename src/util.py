@@ -1,18 +1,20 @@
 import os
 import pandas as pd
 import shutil
+from typing import Dict, Any
 
 
 
 class BiasSettings:
-    def __init__(self, dictionary, bias_ref_params):
+    def __init__(self, dictionary: Dict[str, Any], 
+                 bias_ref_params: list):
         self.dictionary = dictionary
         self.bias_ref_params = set(bias_ref_params)
         self.bias_settings_path = dictionary["config_directory"]
         self.bias_settings_file_name = "bias_settings.tsv"
         self.bias_df = pd.read_csv(self.bias_settings_path + self.bias_settings_file_name, sep = '\t')
 
-    def set_fixedvoltages(self):
+    def set_fixedvoltages(self) -> None:
         self.bias_df["Pre-breakdown"] = self.dictionary["prebreak_voltage"]
         self.bias_df["Breakdown"] = self.dictionary["break_voltage"]
         if self.bias_ref_params:
@@ -22,10 +24,12 @@ class BiasSettings:
                 self.bias_df.loc[(self.bias_df['slotID'] == slot) & (self.bias_df['channelID'] == channel), 'Breakdown'] = ref_det_volt[1]
                 self.bias_df.loc[(self.bias_df['slotID'] == slot) & (self.bias_df['channelID'] == channel), 'Overvoltage'] = ref_det_volt[2]
 
-    def set_overvoltage(self, voltage):
+    def set_overvoltage(self, 
+                        voltage: float
+                        ) -> None:
         self.bias_df.loc[~self.bias_df[['slotID', 'channelID']].apply(tuple, axis=1).isin(self.bias_ref_params), 'Overvoltage'] = voltage
 
-    def write_bias_settings(self):
+    def write_bias_settings(self) -> None:
         new_bias_settings_path = self.dictionary["config_directory"]
         new_bias_settings_file_name = "bias_settings.tsv"
         full_path = new_bias_settings_path + new_bias_settings_file_name
@@ -39,14 +43,15 @@ class BiasSettings:
 
 class DiscSettings:
     
-    def __init__(self, dictionary, disc_ref_params):
+    def __init__(self, dictionary: Dict[str, Any], 
+                 disc_ref_params: list):
         self.dictionary = dictionary
         self.disc_ref_params = set(disc_ref_params)
         self.disc_settings_path = dictionary["config_directory"]
         self.disc_settings_file_name = "disc_settings.tsv"
         self.disc_df = pd.read_csv(self.disc_settings_path + self.disc_settings_file_name, sep = '\t')
         
-    def set_fixedthresholds(self):
+    def set_fixedthresholds(self) -> None:
         self.disc_df["vth_t1"] = self.dictionary["vth_t1"][0]
         self.disc_df["vth_t2"] = self.dictionary["vth_t2"][0]
         self.disc_df["vth_e"] = self.dictionary["vth_e"][0]
@@ -57,10 +62,11 @@ class DiscSettings:
                 self.disc_df.loc[(self.disc_df['chipID'] == chipID), 'vth_t2'] = ref_det_th[1]
                 self.disc_df.loc[(self.disc_df['chipID'] == chipID), 'vth_e'] = ref_det_th[2]
 
-    def set_threshold(self, threshold, key):
+    def set_threshold(self, threshold: int, 
+                     key: str) -> None:
         self.disc_df.loc[~self.disc_df[['chipID']].isin(self.disc_ref_params).any(1), key] = threshold
     
-    def write_disc_settings(self):
+    def write_disc_settings(self) -> None:
         new_disc_settings_path = self.dictionary["config_directory"]
         new_disc_settings_file_name = "disc_settings.tsv"
         full_path = new_disc_settings_path + new_disc_settings_file_name
@@ -73,10 +79,10 @@ class DiscSettings:
 
 
 class Commands:
-    def __init__(self, dictionary):
+    def __init__(self, dictionary: Dict[str, Any]):
         self.dictionary = dictionary
 
-    def acquire_command(self, full_out_name):
+    def acquire_data(self, full_out_name: str) -> None:
         if not os.path.isdir(self.dictionary["out_directory"]):
             os.makedirs(self.dictionary["out_directory"])
         hw_trigger = "--enable-hw-trigger" if self.dictionary["hw_trigger"] else ""
@@ -90,7 +96,7 @@ class Commands:
         print(command + "\n")
         #os.system(command)
 
-    def process_command(self, full_out_name):
+    def process_data(self, full_out_name: str) -> None:
         data_type_mapping = {
             "coincidence": ("_coinc", "./convert_raw_to_coincidence"),
             "single": ("_single", "./convert_raw_to_single"),

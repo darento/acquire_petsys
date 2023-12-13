@@ -57,3 +57,6 @@ vth_t2: [23, 15]
 
 #E threshold list
 vth_e: [17, 19]
+
+# Number of iterations of the whole scan
+iterations: 1
