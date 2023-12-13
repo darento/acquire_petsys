@@ -19,7 +19,7 @@ BIAS_board: "BIAS_16P"
 # 2- Voltages [Vpre-break, Vbreak, Vov]
 # 3- Thresholds
 ref_det_febd: 7
-ref_det_volt: [30, 37, 3]
+ref_det_volt: [30.0, 37.0, 3.0]
 ref_det_ths: [30, 35, 40]
 
 # bias_map.csv location
@@ -32,7 +32,7 @@ mode: "qdc"
 hw_trigger: False
 
 #acquistion time
-time: 30
+time: 31.1
 
 #data process (coincidence/singles/group), (binary, txt, root)
 data_type: group
@@ -47,7 +47,7 @@ prebreak_voltage: 40.0
 break_voltage: 50.0
 
 #over-voltage list
-over_voltage: [2, 3, 4, 5]
+over_voltage: [2.0, 3.0, 4.0, 5.0]
 
 #T1 threshold list
 vth_t1: [12, 15]

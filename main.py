@@ -14,27 +14,14 @@ import yaml
 import pandas as pd
 from typing import Dict, Any
 
-from src.reader import read_bias_map
-from src.util   import BiasSettings
-from src.util   import DiscSettings
-from src.util   import Commands
+from src.reader     import read_bias_map
+from src.settings   import BiasSettings
+from src.settings   import DiscSettings
+from src.settings   import Commands
+from src.config     import get_ref_params
+from src.config     import validate_yaml_dict
 
 
-def get_ref_params(yaml_dict: Dict[str, Any]) -> Tuple[list, list]:
-    bias_map_dict = read_bias_map(yaml_dict["bias_file"])
-    FEM           = yaml_dict["FEM"]
-    FEBD          = yaml_dict["FEBD"]
-    BIAS_board    = yaml_dict["BIAS_board"]
-    #ref detector if there is some
-    ref_det_febd = yaml_dict["ref_det_febd"]
-    if ref_det_febd != -1:
-        #bias_params: list of tuples consisting of [(slotID, channelID)]
-        bias_params = bias_map_dict[FEBD][BIAS_board][ref_det_febd]   
-        num_ASICs = 2 if FEM == "FEM128" else 4
-        disc_params = [ref_det_febd * num_ASICs, ref_det_febd * num_ASICs + 1]
-        return bias_params, disc_params
-    else:
-        return [], []
 
 
 if __name__ == "__main__":
@@ -45,6 +32,9 @@ if __name__ == "__main__":
 
     with open(yaml_conf) as yaml_reader:
         yaml_dict = yaml.safe_load(yaml_reader)
+
+    validate_yaml_dict(yaml_dict)
+    
     dir_path      = yaml_dict["config_directory"]
 
     # get the bias and discriminator settings if they exist, otherwise a empty list is returned
