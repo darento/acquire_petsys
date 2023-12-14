@@ -35,6 +35,7 @@ def validate_yaml_dict(yaml_dict: Dict[str, Any]) -> None:
     assert isinstance(yaml_dict["time"], float), "time debe ser un flotante"
     assert yaml_dict["data_type"] in ["coincidence", "singles", "group"], "data_type debe ser 'coincidence', 'singles' o 'group'"
     assert yaml_dict["data_format"] in ["binary", "txt", "root"], "data_format debe ser 'binary', 'txt' o 'root'"
+    assert yaml_dict["data_compact"] in [True, False], "data_compact debe ser 'True' o 'False'"
     assert yaml_dict["fraction"] > 0 and yaml_dict["fraction"] <= 100, "fraction debe ser mayor a 0 y menor o igual a 100"
     assert isinstance(yaml_dict["fraction"], int), "fraction debe ser un int"
     assert yaml_dict["hits"] > 0 and yaml_dict["hits"] <= 64, "hits debe ser mayor a 0 y menor o igual a 64"

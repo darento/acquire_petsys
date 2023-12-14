@@ -102,9 +102,10 @@ class Commands:
             "single": ("_single", "./convert_raw_to_single"),
             "group": ("_group", "./convert_raw_to_group")
         }
+        data_format_compact = "Compact" if self.dictionary["data_compact"] else ""
         data_format_mapping = {
-            "txt": "",
-            "binary": "--writeBinary",
+            "txt": f"--writeText{data_format_compact}",
+            "binary": f"--writeBinary{data_format_compact}",
             "root": "--writeRoot"
         }
         sufix, process_command = data_type_mapping[self.dictionary["data_type"]]

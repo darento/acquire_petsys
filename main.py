@@ -19,14 +19,13 @@ import pandas as pd
 from typing import Dict, Any
 import os
 
-from src.reader     import read_bias_map
 from src.settings   import BiasSettings
 from src.settings   import DiscSettings
 from src.settings   import Commands
 from src.config     import get_ref_params
 from src.config     import validate_yaml_dict
 
-def confirm_file_deletion(file_path: str):
+def confirm_file_deletion(file_path: str) -> None:
     if os.path.exists(file_path):
         confirm = ''
         while confirm.lower() not in ['s', 'n']:
@@ -38,7 +37,7 @@ def confirm_file_deletion(file_path: str):
         elif confirm.lower() == 'n':
             print(f"Se hará un append al final del fichero con los nuevos elementos.")
 
-def process_files(petsys_commands: Commands, file_path: str):
+def process_files(petsys_commands: Commands, file_path: str)-> None:
     with open(file_path, 'r') as f:
         file_names = f.read().splitlines()
     for full_out_name in file_names:
@@ -52,7 +51,7 @@ def acquire_data(bias_settings: BiasSettings,
                  voltages: list, 
                  time_T1:list, 
                  time_T2:list, 
-                 time_E:list):
+                 time_E:list)-> None:
     for it in range(iterations):
         for v in voltages:
             #bias_df = bias_settings.bias_df.copy()
