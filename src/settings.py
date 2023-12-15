@@ -115,8 +115,8 @@ class Commands:
 
         command = (
             f"{process_command} --config {self.dictionary['config_directory']}config.ini "
-            f"-i {self.dictionary['out_directory']}{full_out_name} "
-            f"-o {self.dictionary['out_directory']}{process_out_name} "
+            f"-i {full_out_name} "
+            f"-o {process_out_name} "
             f"--writeMultipleHits {self.dictionary['hits']} {output_format}"
         )
         
