@@ -20,7 +20,7 @@ BIAS_board: "BIAS_16P"
 # 3- Thresholds
 ref_det_febd: 7
 ref_det_volt: [30.0, 37.5, 3.0]
-ref_det_ths: [30, 35, 20]
+ref_det_ths: [30, 15, 10]
 
 # bias_map.csv location
 bias_file: "C:\\Users\\David\\Desktop\\Python\\PETsyScan\\test_data\\bias_map_corrected.csv"

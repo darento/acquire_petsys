@@ -64,7 +64,8 @@ class DiscSettings:
 
     def set_threshold(self, threshold: int, 
                      key: str) -> None:
-        self.disc_df.loc[~self.disc_df[['chipID']].isin(self.disc_ref_params).any(1), key] = threshold
+        #self.disc_df.loc[~self.disc_df[['chipID']].isin(self.disc_ref_params).any(1), key] = threshold
+        self.disc_df.loc[~self.disc_df['chipID'].isin(self.disc_ref_params), key] = threshold
     
     def write_disc_settings(self) -> None:
         new_disc_settings_path = self.dictionary["config_directory"]
