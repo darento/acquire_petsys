@@ -1,0 +1,63 @@
+#config.ini file directory
+config_directory: "/home/LabPC_10/WorkingDir/sw/python_code/PETsyScan/test_data/FEM128/"
+
+#output base name and directory
+out_name: "20230812_test"
+out_directory: "/home/LabPC_10/WorkingDir/sw/python_code/PETsyScan/test_data/"
+
+#FEM being used (FEM128/FEM256)
+FEM: "FEM128"
+
+#FEB/D being used (FEBD1k/FEBD8k)
+FEBD: "FEBD1k"
+
+#BIAS board mezzanine (BIAS_16P, BIAS_32P, BIAS_64P)
+BIAS_board: "BIAS_16P"
+
+# Indicate reference detector:
+# 1- FEB/D portID if there is, -1 if no reference detector is present (always starting from 0)
+# 2- Voltages [Vpre-break, Vbreak, Vov]
+# 3- Thresholds
+ref_det_febd: 7
+ref_det_volt: [30.0, 37.5, 3.0]
+ref_det_ths: [30, 15, 10]
+
+# bias_map.csv location
+bias_file: "/home/LabPC_10/WorkingDir/sw/python_code/PETsyScan/test_data/bias_map_corrected.csv"
+
+#acquisition mode (qdc,tot)
+mode: "qdc"
+
+#HW trigger (True/False)
+hw_trigger: False
+
+#acquistion time
+time: 31.1
+
+#data process (coincidence/singles/group), (binary, txt, root), Compact (True/False)
+data_type: group
+data_format: binary
+data_compact: True
+fraction: 100
+hits: 64
+
+#offset voltage
+prebreak_voltage: 40.0
+
+#Vbreak
+break_voltage: 50.0
+
+#over-voltage list
+over_voltage: [4.2]
+
+#T1 threshold list
+vth_t1: [12]
+
+#T2 threshold list
+vth_t2: [21]
+
+#E threshold list
+vth_e: [1]
+
+# Number of iterations of the whole scan
+iterations: 3
