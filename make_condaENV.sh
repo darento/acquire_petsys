@@ -76,6 +76,7 @@ function install_miniconda {
 }
 
 # Start main
+echo "Starting make_condaENV.sh..."
 if ! which conda >> /dev/null
 then
     mini_loc=$HOME/miniconda

@@ -54,8 +54,6 @@ def acquire_data(bias_settings: BiasSettings,
                  time_E:list)-> None:
     for it in range(iterations):
         for v in voltages:
-            #bias_df = bias_settings.bias_df.copy()
-            #disc_df = disc_settings.disc_df.copy()
             bias_settings.set_overvoltage(v)
             bias_settings.write_bias_settings()
             v_bias = v + yaml_dict["break_voltage"]
