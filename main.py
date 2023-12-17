@@ -68,6 +68,7 @@ def acquire_data(bias_settings: BiasSettings,
                         full_out_name = yaml_dict["out_name"] + "_it{}_{}OV_{}T1_{}T2_{}E".format(it, v_bias, t1, t2, e)
                         file_dir = yaml_dict["out_directory"] + full_out_name
                         petsys_commands.acquire_data(full_out_name)
+                        print(file_dir)
                         print("------------------------------------------")
                         time.sleep(1)
                         with open(all_files_name, 'a') as f:
@@ -86,6 +87,8 @@ if __name__ == "__main__":
     validate_yaml_dict(yaml_dict)
     
     dir_path      = yaml_dict["config_directory"]
+    current_dir = os.getcwd()
+    
 
     # get the bias and discriminator settings if they exist, otherwise a empty list is returned
     bias_ref_params, disc_ref_params = get_ref_params(yaml_dict)
@@ -102,13 +105,20 @@ if __name__ == "__main__":
     time_T2 = yaml_dict["vth_t2"]
     time_E = yaml_dict["vth_e"]
     iterations = yaml_dict["iterations"]
-    all_files_name = yaml_dict["out_name"] + '.txt'
+    all_files_name = yaml_dict["out_directory"] + yaml_dict["out_name"] + '.txt'
+
+    # change to the petsys directory to run the acquire_sipm_data command or process files
+    petsys_directory = yaml_dict["petsys_directory"]
+    os.chdir(petsys_directory)
+
     if mode == "acquire" or mode == "both":
-        confirm_file_deletion(all_files_name)
-        acquire_data(bias_settings, disc_settings, yaml_dict, all_files_name, iterations, voltages, time_T1, time_T2, time_E)
+        confirm_file_deletion(all_files_name)        
+        acquire_data(bias_settings, disc_settings, yaml_dict, all_files_name, iterations, voltages, time_T1, time_T2, time_E)        
         if mode == "both":
             process_files(petsys_commands, all_files_name)
     elif mode == "process":
         process_files(petsys_commands, all_files_name)
     else:
         print("Modo [-m] no válido. Puede ser 'acquire', 'process' o 'both'")
+    # change back to the original directory
+    os.chdir(current_dir)

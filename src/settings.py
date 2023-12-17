@@ -1,4 +1,5 @@
 import os
+import subprocess
 import pandas as pd
 import shutil
 from typing import Dict, Any
@@ -87,7 +88,6 @@ class Commands:
         if not os.path.isdir(self.dictionary["out_directory"]):
             os.makedirs(self.dictionary["out_directory"])
         hw_trigger = "--enable-hw-trigger" if self.dictionary["hw_trigger"] else ""
-
         command = (
             f"./acquire_sipm_data --config {self.dictionary['config_directory']}config.ini "
             f"--mode {self.dictionary['mode']} --time {self.dictionary['time']} "
@@ -95,6 +95,7 @@ class Commands:
         )
 
         print(command + "\n")
+        #subprocess.run(command, check=True, shell=True)
         #os.system(command)
 
     def process_data(self, full_out_name: str) -> None:
@@ -112,7 +113,6 @@ class Commands:
         sufix, process_command = data_type_mapping[self.dictionary["data_type"]]
         output_format = data_format_mapping[self.dictionary["data_format"]]
         process_out_name = full_out_name + sufix
-
         command = (
             f"{process_command} --config {self.dictionary['config_directory']}config.ini "
             f"-i {full_out_name} "
@@ -121,6 +121,7 @@ class Commands:
         )
         
         print(command + "\n")
+        #subprocess.run(command, check=True, shell=True)
         #os.system(command)
     
 

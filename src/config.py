@@ -21,6 +21,8 @@ def get_ref_params(yaml_dict: Dict[str, Any]) -> Tuple[list, list]:
 def validate_yaml_dict(yaml_dict: Dict[str, Any]) -> None:
     """Validates the yaml dictionary to check if all the necessary fields are present.
     """
+    assert os.path.exists(yaml_dict["config_directory"]), "La ruta especificada en config_directory no existe"
+    assert os.path.exists(yaml_dict["petsys_directory"]), "La ruta especificada en petsys_directory no existe"
     assert yaml_dict["FEM"] in ["FEM128", "FEM256"], "FEM debe ser 'FEM128' o 'FEM256'"
     assert yaml_dict["FEBD"] in ["FEBD1k", "FEBD8k"], "FEBD debe ser 'FEBD1k' o 'FEBD8k'"
     assert yaml_dict["BIAS_board"] in ["BIAS_16P", "BIAS_32P", "BIAS_64P"], "BIAS_board debe ser 'BIAS_16P', 'BIAS_32P' o 'BIAS_64P'"
@@ -39,7 +41,6 @@ def validate_yaml_dict(yaml_dict: Dict[str, Any]) -> None:
     assert yaml_dict["fraction"] > 0 and yaml_dict["fraction"] <= 100, "fraction debe ser mayor a 0 y menor o igual a 100"
     assert isinstance(yaml_dict["fraction"], int), "fraction debe ser un int"
     assert yaml_dict["hits"] > 0 and yaml_dict["hits"] <= 64, "hits debe ser mayor a 0 y menor o igual a 64"
-    assert os.path.exists(yaml_dict["config_directory"]), "La ruta especificada en config_directory no existe"
     assert isinstance(yaml_dict["prebreak_voltage"], float), "prebreak_voltage debe ser un flotante"
     assert isinstance(yaml_dict["break_voltage"], float), "break_voltage debe ser un flotante"
     assert isinstance(yaml_dict["over_voltage"], list), "over_voltage debe ser una lista"
