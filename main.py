@@ -16,7 +16,7 @@ import time
 from docopt import docopt
 import yaml
 import pandas as pd
-from typing import Dict, Any
+from typing import Dict, Any, List
 import os
 
 from src.settings   import BiasSettings
@@ -40,8 +40,37 @@ def confirm_file_deletion(file_path: str) -> None:
 def process_files(petsys_commands: Commands, file_path: str)-> None:
     with open(file_path, 'r') as f:
         file_names = f.read().splitlines()
+    # initialize a list to store the time each iteration takes
+    iteration_times = []
+    # total number of iterations
+    total_iterations = len(file_names)
+    # current iteration
+    current_iteration = 0
+
     for full_out_name in file_names:
+        # Record the start time of the iteration
+        start_time = time.time()
+
         petsys_commands.process_data(full_out_name)
+        
+        # Record the end time of the iteration, and add it to the list
+        end_time = time.time()
+        iteration_times.append(end_time - start_time)
+        estimate_remaining_time(iteration_times, total_iterations, current_iteration, string_process = "process_data")
+        current_iteration += 1
+
+def estimate_remaining_time(iteration_times: List[float], 
+                            total_iterations: int, 
+                            current_iteration: int,
+                            string_process: str) -> None:
+    # Calculate the average time per iteration so far
+    avg_time_per_iteration = sum(iteration_times) / len(iteration_times)
+
+    # Estimate the remaining time
+    remaining_iterations = total_iterations - current_iteration
+    estimated_remaining_time = avg_time_per_iteration * remaining_iterations
+
+    print(f"Estimated remaining time for {string_process}: {round(estimated_remaining_time, 1)} seconds")
 
 def acquire_data(bias_settings: BiasSettings, 
                  disc_settings: DiscSettings,
@@ -52,6 +81,15 @@ def acquire_data(bias_settings: BiasSettings,
                  time_T1:list, 
                  time_T2:list, 
                  time_E:list)-> None:
+    # Initialize a list to store the time each iteration takes
+    iteration_times = []
+
+    # Total number of iterations
+    total_iterations = len(time_E) * len(time_T2) * len(time_T1) * len(voltages) * iterations
+
+    # Current iteration
+    current_iteration = 0
+
     for it in range(iterations):
         for v in voltages:
             bias_settings.set_overvoltage(v)
@@ -62,17 +100,27 @@ def acquire_data(bias_settings: BiasSettings,
                 for t2 in time_T2:
                     disc_settings.set_threshold(t2, "vth_t2")
                     for e in time_E:
+                        # Record the start time of the iteration
+                        start_time = time.time()
+
                         print(f"Setting bias to {v_bias}V, T1 to {t1}, T2 to {t2}, E to {e} at iteration {it}")
                         disc_settings.set_threshold(e, "vth_e")
                         disc_settings.write_disc_settings()
                         full_out_name = yaml_dict["out_name"] + "_it{}_{}OV_{}T1_{}T2_{}E".format(it, v_bias, t1, t2, e)
                         file_dir = yaml_dict["out_directory"] + full_out_name
                         petsys_commands.acquire_data(full_out_name)
-                        print(file_dir)
                         print("------------------------------------------")
                         time.sleep(1)
                         with open(all_files_name, 'a') as f:
                             f.write(file_dir + '\n')
+
+                        # Record the end time of the iteration, and add it to the list
+                        end_time = time.time()
+                        iteration_times.append(end_time - start_time)
+
+                        estimate_remaining_time(iteration_times, total_iterations, current_iteration, string_process = "acquire_data")
+
+                        current_iteration += 1
 
 
 if __name__ == "__main__":
