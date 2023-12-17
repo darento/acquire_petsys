@@ -24,6 +24,7 @@ from src.settings   import DiscSettings
 from src.settings   import Commands
 from src.config     import get_ref_params
 from src.config     import validate_yaml_dict
+from src.utils      import estimate_remaining_time
 
 def confirm_file_deletion(file_path: str) -> None:
     if os.path.exists(file_path):
@@ -58,19 +59,6 @@ def process_files(petsys_commands: Commands, file_path: str)-> None:
         iteration_times.append(end_time - start_time)
         estimate_remaining_time(iteration_times, total_iterations, current_iteration, string_process = "process_data")
         current_iteration += 1
-
-def estimate_remaining_time(iteration_times: List[float], 
-                            total_iterations: int, 
-                            current_iteration: int,
-                            string_process: str) -> None:
-    # Calculate the average time per iteration so far
-    avg_time_per_iteration = sum(iteration_times) / len(iteration_times)
-
-    # Estimate the remaining time
-    remaining_iterations = total_iterations - current_iteration
-    estimated_remaining_time = avg_time_per_iteration * remaining_iterations
-
-    print(f"Estimated remaining time for {string_process}: {round(estimated_remaining_time, 1)} seconds")
 
 def acquire_data(bias_settings: BiasSettings, 
                  disc_settings: DiscSettings,
