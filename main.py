@@ -105,7 +105,7 @@ if __name__ == "__main__":
     time_T2 = yaml_dict["vth_t2"]
     time_E = yaml_dict["vth_e"]
     iterations = yaml_dict["iterations"]
-    all_files_name = yaml_dict["out_directory"] + yaml_dict["out_name"] + '.txt'
+    all_files_name = os.path.join(yaml_dict["out_directory"], yaml_dict["out_name"] + '.txt')
 
     # change to the petsys directory to run the acquire_sipm_data command or process files
     petsys_directory = yaml_dict["petsys_directory"]
