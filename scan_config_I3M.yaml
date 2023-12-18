@@ -1,6 +1,9 @@
 #config.ini file directory
 config_directory: "C:\\Users\\David\\Desktop\\Python\\PETsyScan\\test_data\\FEM128\\"
 
+#PETsys binaries directory 
+petsys_directory: "C:\\Users\\David\\Desktop\\Python\\PETsys_sw_fake\\"
+
 #output base name and directory
 out_name: "20230812_test"
 out_directory: "C:\\Users\\David\\Desktop\\Python\\PETsyScan\\test_data\\"
@@ -20,10 +23,10 @@ BIAS_board: "BIAS_16P"
 # 3- Thresholds
 ref_det_febd: 7
 ref_det_volt: [30.0, 37.5, 3.0]
-ref_det_ths: [30, 15, 10]
+ref_det_ths: [30, 15, 12]
 
 # bias_map.csv location
-bias_file: "C:\\Users\\David\\Desktop\\Python\\PETsyScan\\test_data\\bias_map_corrected.csv"
+bias_file: "test_data/bias_map_corrected.csv"
 
 #acquisition mode (qdc,tot)
 mode: "qdc"
@@ -57,7 +60,7 @@ vth_t1: [12]
 vth_t2: [21]
 
 #E threshold list
-vth_e: [1]
+vth_e: [10]
 
 # Number of iterations of the whole scan
 iterations: 3

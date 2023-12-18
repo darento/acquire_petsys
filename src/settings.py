@@ -94,8 +94,8 @@ class Commands:
             f"-o {self.dictionary['out_directory']}{full_out_name} {hw_trigger}"
         )
 
-        print(command + "\n")
-        #subprocess.run(command, check=True, shell=True)
+        #print(command + "\n")
+        subprocess.run(command, check=True, shell=True)
         #os.system(command)
 
     def process_data(self, full_out_name: str) -> None:
@@ -120,8 +120,8 @@ class Commands:
             f"--writeMultipleHits {self.dictionary['hits']} {output_format}"
         )
         
-        print(command + "\n")
-        #subprocess.run(command, check=True, shell=True)
+        #print(command + "\n")
+        subprocess.run(command, check=True, shell=True)
         #os.system(command)
     
 
