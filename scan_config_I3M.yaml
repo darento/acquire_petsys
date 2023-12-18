@@ -40,7 +40,7 @@ time: 31.1
 #data process (coincidence/singles/group), (binary, txt, root), Compact (True/False)
 data_type: group
 data_format: binary
-data_compact: True
+data_compact: False
 fraction: 100
 hits: 64
 

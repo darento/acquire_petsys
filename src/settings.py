@@ -95,8 +95,7 @@ class Commands:
         )
 
         #print(command + "\n")
-        subprocess.run(command, check=True, shell=True)
-        #os.system(command)
+        os.system(command)
 
     def process_data(self, full_out_name: str) -> None:
         data_type_mapping = {
@@ -104,10 +103,10 @@ class Commands:
             "single": ("_single", "./convert_raw_to_single"),
             "group": ("_group", "./convert_raw_to_group")
         }
-        data_format_compact = "Compact" if self.dictionary["data_compact"] else ""
+        data_format_compact = ["--writeTextCompact", "Compact"] if self.dictionary["data_compact"] else ["", ""]
         data_format_mapping = {
-            "txt": f"--writeText{data_format_compact}",
-            "binary": f"--writeBinary{data_format_compact}",
+            "txt": f"{data_format_compact[0]}",
+            "binary": f"--writeBinary{data_format_compact[1]}",
             "root": "--writeRoot"
         }
         sufix, process_command = data_type_mapping[self.dictionary["data_type"]]
@@ -121,7 +120,6 @@ class Commands:
         )
         
         #print(command + "\n")
-        subprocess.run(command, check=True, shell=True)
-        #os.system(command)
+        os.system(command)
     
 
