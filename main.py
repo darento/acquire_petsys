@@ -29,14 +29,14 @@ from src.utils      import estimate_remaining_time
 def confirm_file_deletion(file_path: str) -> None:
     if os.path.exists(file_path):
         confirm = ''
-        while confirm.lower() not in ['s', 'n']:
-            confirm = input(f"El archivo {file_path} ya existe. ¿Desea eliminarlo? (s/n): ")
-            if confirm.lower() not in ['s', 'n']:
-                print("Opción no válida.")
-        if confirm.lower() == 's':
+        while confirm.lower() not in ['y', 'n']:
+            confirm = input(f"The file {file_path} already exists. Do you want to delete it? (y/n): ")
+            if confirm.lower() not in ['y', 'n']:
+                print("Invalid option.")
+        if confirm.lower() == 'y':
             os.remove(file_path)
         elif confirm.lower() == 'n':
-            print(f"Se hará un append al final del fichero con los nuevos elementos.")
+            print(f"Appending to the end of the file with new elements.")
 
 def process_files(petsys_commands: Commands, file_path: str)-> None:
     with open(file_path, 'r') as f:
@@ -155,6 +155,6 @@ if __name__ == "__main__":
     elif mode == "process":
         process_files(petsys_commands, all_files_name)
     else:
-        print("Modo [-m] no válido. Puede ser 'acquire', 'process' o 'both'")
+        print("Mode [-m] not valid. You can choose 'acquire', 'process' o 'both'")
     # change back to the original directory
     os.chdir(current_dir)
