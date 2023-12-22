@@ -8,21 +8,32 @@ class MotorControl:
     def __init__(self, serial_port):
         """Initialize the serial connection to the motor."""
         try:
-            self.ser = serial.Serial(port=serial_port, baudrate=115200, timeout=3)
+            self.ser = serial.Serial(port=serial_port, baudrate=9600, timeout=3)  #baudrate = 9600 on our motors
         except serial.SerialException as e:
             print(f"Failed to open serial port: {e}")
+        self.numMotors = 1
 
-    def move(self, left, right):
-        """Send move command to the motor."""
+    def move_motor(self, motor: int, direction: int, steps: int):
+        """Send move command to the specified motor."""
+        command = f"MOVE,{motor},{direction},{steps}\n"
         try:
-            self.ser.write(f"M{left} {right}\n")
+            self.ser.write(command.encode())
         except serial.SerialException as e:
             print(f"Failed to send move command: {e}")
 
-    def stop(self):
-        """Send stop command to the motor."""
+    def set_num_motors(self, num_motors: int):
+        """Set the number of motors."""
+        command = f"SETMOTORS,{num_motors}\n"
         try:
-            self.ser.write("S\n")
+            self.ser.write(command.encode())
+        except serial.SerialException as e:
+            print(f"Failed to send set_num_motors command: {e}")
+
+    def stop_motor(self, motor: int):
+        """Send stop command to a specified motor."""
+        command = f"STOP,{motor}\n"
+        try:
+            self.ser.write(command.encode())
         except serial.SerialException as e:
             print(f"Failed to send stop command: {e}")
 
@@ -64,6 +75,27 @@ def serial_ports():
         except (OSError, serial.SerialException):
             pass
     return result
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print(f"Usage: {sys.argv[0]} <number of steps>")
+        sys.exit(1)
+
+    steps = int(sys.argv[1])
+
+    ports = serial_ports()
+
+
+    print(ports)
+    exit(0)
+
+    if len(ports) == 0:
+        print("No serial ports found")
+        sys.exit(1)
+
+    motor = MotorControl(ports[0])
+    motor.move(steps)
+    motor.close()
 
     
 
