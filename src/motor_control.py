@@ -77,11 +77,8 @@ def serial_ports():
     return result
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print(f"Usage: {sys.argv[0]} <number of steps>")
-        sys.exit(1)
-
-    steps = int(sys.argv[1])
+    
+    steps = 200
 
     ports = serial_ports()
 
