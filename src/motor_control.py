@@ -9,7 +9,7 @@ class MotorControl:
     def __init__(self, serial_port):
         """Initialize the serial connection to the motor."""
         try:
-            self.ser = serial.Serial(port=serial_port, baudrate=9600, timeout=5)  #baudrate = 9600 on our motors
+            self.ser = serial.Serial(port=serial_port, baudrate=9600, timeout=10)  #baudrate = 9600 on our motors
             self.ser.rts=True
         except serial.SerialException as e:
             print(f"Failed to open serial port: {e}")
@@ -25,14 +25,16 @@ class MotorControl:
             print(f"Failed to read from serial port: {e}")
             
     def __write_command(self, command: bytes):
-        """Write a command to the serial port."""
+        """Write a command to the serial port and wait for an 'F' response."""
         try:
             self.ser.write(command)
             print(f"Sent command: {command}")
+            response = self.ser.read_until(b'F').decode().strip()  # Wait for an 'F', make it sequential
+            print(f"Received response: {response}")
         except serial.SerialException as e:
             print(f"Failed to send command: {e}")
             raise
-        
+
     def connection_motor(self):
         """Connect to the motor."""
         command = f"CON\n"
@@ -52,6 +54,11 @@ class MotorControl:
         """Send stop command to a specified motor."""
         command = f"STOP,{motor}\n"
         self.__write_command(command.encode())
+    
+    def pingLED(self):
+        """Send a ping to the LED."""
+        command = f"LED\n"
+        self.__write_command(command.encode())
 
     def close(self):
         """Close the serial connection."""
@@ -66,6 +73,7 @@ class MotorControl:
             return self.ser.readline().strip().decode("utf-8")
         except serial.SerialException as e:
             print(f"Failed to read from serial port: {e}")
+            
 
 def serial_ports():
     """Lists serial port names.
@@ -112,11 +120,12 @@ if __name__ == "__main__":
     motor = MotorControl(motor_port)
     motor.connection_motor()
     print(f"READING HERE IF MOTOR IS UP --> {motor.read()}")
+    motor.pingLED()
     motor.set_num_motors(1)
-    motor.move_motor(1, 1, steps)
-    time.sleep(1)
-    motor.move_motor(1, 0, steps)
-    time.sleep(1)
+    motor.move_motor(1, 1, 400)
+    motor.move_motor(1, -1, 100)
+    motor.move_motor(1, -1, 600)
+    motor.move_motor(1, 1, 1000)
     motor.stop_motor(1)
     motor.close()
     
