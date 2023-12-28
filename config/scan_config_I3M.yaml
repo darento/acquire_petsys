@@ -38,9 +38,9 @@ hw_trigger: False
 time: 31.1
 
 #data process (coincidence/singles/group), (binary, txt, root), Compact (True/False)
-data_type: group
+data_type: coincidence
 data_format: binary
-data_compact: False
+data_compact: True
 fraction: 100
 hits: 64
 

@@ -94,8 +94,8 @@ class Commands:
             f"-o {self.dictionary['out_directory']}{full_out_name} {hw_trigger}"
         )
 
-        #print(command + "\n")
-        os.system(command)
+        print(command + "\n")
+        #os.system(command)
 
     def process_data(self, full_out_name: str) -> None:
         data_type_mapping = {
@@ -119,7 +119,7 @@ class Commands:
             f"--writeMultipleHits {self.dictionary['hits']} {output_format}"
         )
         
-        #print(command + "\n")
-        os.system(command)
+        print(command + "\n")
+        #os.system(command)
     
 
