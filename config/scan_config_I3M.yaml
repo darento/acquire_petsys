@@ -63,19 +63,41 @@ vth_t2: [21]
 vth_e: [10]
 
 # Number of iterations of the whole scan
-iterations: 3
+iterations: 1
 
 # MOTOR PARAMETERS IF USED FOR SCAN
 # -------------------------------
 
 # Motor flag (True/False)
-motor: False
+motor: True
 
-# Motor type (linear, rotation)
-motor_type: linear
+# Number of motors (1, 2 or 3)
+num_motors: 1
 
-# Motor relation (mm/rev)
-motor_relation: 0.5
+# Motor name and parameters. If motor is False, these parameters are ignored
+motorX:
+  type: linear
+  start: 1.0
+  end: 2.0
+  step_size: 0.25 
+  microstep: 1
+  relation: 0.5
+  
+motorY:
+  type: linear
+  start: 2.0
+  end: 10.0
+  step_size: 0.2
+  microstep: 1
+  relation: 0.5
+
+motorZ:
+  type: linear
+  start: 2.0
+  end: 10.0
+  step_size: 0.2
+  microstep: 1
+  relation: 0.5
 
 
 

@@ -18,13 +18,16 @@ import yaml
 import pandas as pd
 from typing import Dict, Any, List
 import os
+import sys
 
-from src.settings   import BiasSettings
-from src.settings   import DiscSettings
-from src.settings   import Commands
-from src.config     import get_ref_params
-from src.config     import validate_yaml_dict
-from src.utils      import estimate_remaining_time
+from src.settings      import BiasSettings
+from src.settings      import DiscSettings
+from src.settings      import Commands
+from src.config        import get_ref_params
+from src.config        import validate_yaml_dict
+from src.utils         import estimate_remaining_time
+from src.motor_control import MotorControl
+from src.motor_control import serial_ports
 
 def confirm_file_deletion(file_path: str) -> None:
     if os.path.exists(file_path):
@@ -118,7 +121,7 @@ if __name__ == "__main__":
     mode = args["-m"]
     
     with open(yaml_conf) as yaml_reader:
-        yaml_dict = yaml.safe_load(yaml_reader)
+        yaml_dict = yaml.safe_load(yaml_reader)                
 
     validate_yaml_dict(yaml_dict)
     
@@ -148,8 +151,52 @@ if __name__ == "__main__":
     os.chdir(petsys_directory)
 
     if mode == "acquire" or mode == "both":
-        confirm_file_deletion(all_files_name)        
-        acquire_data(bias_settings, disc_settings, yaml_dict, all_files_name, iterations, voltages, time_T1, time_T2, time_E)        
+        confirm_file_deletion(all_files_name) 
+
+        # Check if the motor flag is set to True
+        if not yaml_dict['motor']:
+            # Run the acquire_data function
+            acquire_data(bias_settings, disc_settings, yaml_dict, all_files_name, iterations, voltages, time_T1, time_T2, time_E)
+        else:
+            # Find the motor port
+            motor_port = serial_ports()
+
+            if motor_port is None:
+                print("No motor port found")
+                sys.exit(1)
+
+            # Create a MotorControl instance for each motor
+            motors = []
+            for i in range(yaml_dict['num_motors']):
+                motor_name = f"motor{chr(88 + i)}"  # 88 is ASCII for 'X'
+                motor_config = yaml_dict[motor_name]
+                motor = MotorControl(motor_port, motor_config['relation'], 
+                                    motor_config['microstep'], motor_config['start'], 
+                                    motor_config['end'], motor_config['step_size'])
+                motors.append(motor)
+            
+            # Move each motor to start
+            for motor in motors:
+                motor.move_to_start()     
+            # Loop to move each motor step by step and acquire data
+            while any(motor.current_position_mm < motor.motor_end for motor in motors):
+                for motor in motors:
+                    # Move motor to the next step if it hasn't reached the end
+                    if motor.current_position_mm < motor.motor_end:
+                        motor.next_step()
+                        print(f"Motor moved to {motor.current_position_mm}mm")
+
+                        # Run the acquire_data function
+                        acquire_data(bias_settings, disc_settings, yaml_dict, all_files_name, iterations, voltages, time_T1, time_T2, time_E)
+
+                        # Add a delay or wait for user input or signal from other script as needed
+                        time.sleep(1)  
+                        
+            # Move each motor to home and close the motor port when done
+            for motor in motors:
+                motor.move_to_home()
+                print(f"Motor moved to {motor.current_position_mm}mm")
+                motor.close()                
         if mode == "both":
             process_files(petsys_commands, all_files_name)
     elif mode == "process":
