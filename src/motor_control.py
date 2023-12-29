@@ -1,11 +1,15 @@
 import serial
 import sys
 import glob
-import time
 import numpy as np
+import logging
+import time
 
 # Constants
 STEPS_PER_REV = 200  # for a 1.8° stepper motor
+BAUDRATE = 9600
+TIMEOUT = 5
+WHILE_TIMEOUT = 300 # 5 minutes timeout for while loops
 
 class MotorControl:
     """Class to control a motor via serial communication."""
@@ -23,11 +27,13 @@ class MotorControl:
         self.initialize_serial(serial_port)
         self.configure_motor(motor_relation, motor_microstep, motor_start, motor_end, 
                              motor_step_size, motor_name, motor_id)
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.WARNING)
 
     def initialize_serial(self, serial_port: str):
         """Initialize serial connection with robust error handling."""
         try:
-            self.ser = serial.Serial(port=serial_port, baudrate=9600, timeout=5)
+            self.ser = serial.Serial(port=serial_port, baudrate=BAUDRATE, timeout=TIMEOUT)
             self.ser.rts = True
             self.__read_until(b"<>\n")
         except serial.SerialException as e:
@@ -59,52 +65,62 @@ class MotorControl:
         try:
             return self.ser.read_until(end_signal)
         except serial.SerialException as e:
-            print(f"Failed to read from serial port: {e}")
+            self.logger.error(f"Failed to read from serial port: {e}")
+            raise
             
     def __write_command(self, command: bytes) -> None:
         """Write a command to the serial port and wait for an 'F' response."""
         try:
             self.ser.write(command)
-            print(f"Sent command: {command}")
+            self.logger.debug(f"Sent command: {command}")
             # Wait for an 'F', make it sequential
+            start_time = time.time()
+            timeout = WHILE_TIMEOUT  # Timeout after 5 seconds
             response = ''
             while not response.endswith('F'):
+                if time.time() - start_time > timeout:
+                    self.logger.error("Timeout waiting for response")
+                    raise TimeoutError("Timeout waiting for response from motor")
                 response += self.ser.read_until(b'F').decode().strip() 
-            print(f"Received response: {response}")
+            self.logger.debug(f"Received response: {response}")
         except serial.SerialException as e:
-            print(f"Failed to send command: {e}")
+            self.logger.error(f"Failed to send command: {e}")
             raise
+
+    def format_command(self, *args) -> bytes:
+        """Format a command to send to the motor."""
+        return ','.join(str(arg) for arg in args).encode() 
 
     def connection_motor(self) -> None:
         """Connect to the motor."""
-        command = f"CON\n"
-        self.__write_command(command.encode())
+        command = self.format_command("CON")
+        self.__write_command(command)
     
     def move_motor(self, direction: int, steps: int) -> None:
         """Send move command to the specified motor."""
-        command = f"MOVE,{self.motor_id},{direction},{steps}\n"
-        self.__write_command(command.encode())
+        command = self.format_command("MOVE", self.motor_id, direction, steps)
+        self.__write_command(command)
         
     def move_motor_to(self, position: int) -> None:
         """Send move command to the specified motor."""
-        command = f"MOVETO,{self.motor_id},{position}\n"
-        self.__write_command(command.encode())
+        command = self.format_command("MOVETO", self.motor_id, position)
+        self.__write_command(command)
         self.current_position_mm = position * self.motor_relation / STEPS_PER_REV / self.motor_microstep
 
     def set_num_motors(self, num_motors: int) -> None:
         """Set the number of motors."""
-        command = f"SETMOTORS,{num_motors}\n"
-        self.__write_command(command.encode())
+        command =  self.format_command("SETMOROS", num_motors) 
+        self.__write_command(command)
 
     def stop_motor(self) -> None:
         """Send stop command to a specified motor."""
-        command = f"STOP,{self.motor_id}\n"
-        self.__write_command(command.encode())
+        command = self.format_command("STOP", self.motor_id)  
+        self.__write_command(command)
     
     def pingLED(self) -> None:
         """Send a ping to the LED."""
-        command = f"LED\n"
-        self.__write_command(command.encode())
+        command = self.format_command("LED")  
+        self.__write_command(command)
 
     def close(self) -> None:
         """Close the serial connection."""
@@ -170,7 +186,8 @@ def serial_ports() -> str:
     :raises EnvironmentError: On unsupported or unknown platforms
     :returns: A list of the serial ports available on the system
     """
-    print("Searching for motor port...")
+    logger = logging.getLogger(__name__)
+    logger.info("Searching for motor port...")
     if sys.platform.startswith('win'):
         ports = [f'COM{i + 1}' for i in range(256)]
     elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
@@ -182,7 +199,7 @@ def serial_ports() -> str:
     
     for port in ports:
         try:
-            with serial.Serial(port, baudrate=9600, timeout=5) as ser:  # Use 'with' to ensure the port is closed
+            with serial.Serial(port, baudrate=BAUDRATE, timeout=TIMEOUT) as ser:  # Use 'with' to ensure the port is closed
                 ser.rts=True
                 start_signal = "<>".encode()
                 ser.read_until(start_signal)
@@ -190,12 +207,13 @@ def serial_ports() -> str:
                     ser.write(b"CON\n")
                     com_response=ser.readline().strip().decode("utf-8")
                     if com_response == "MOTORUP":
-                        print(f"Motor found on port {port}")
+                        logger.info(f"Motor found on port {port}")
                         return port
                 except UnicodeDecodeError as e:
-                    print(f"UnicodeDecodeError on port {port}: {e}")
-        except (OSError, serial.SerialException):
-            pass
+                    logger.error(f"UnicodeDecodeError on port {port}: {e}")
+        except (OSError, serial.SerialException) as e:
+            logger.debug(f"Failed to connect to port {port}: {e}")
+    logger.warning("No motor port found")
     return None
 
 if __name__ == "__main__":
@@ -219,25 +237,6 @@ if __name__ == "__main__":
     motor.move_to_home()
     print(f"Motor moved to {motor.current_position_mm}mm")
     motor.close()
-    
-    """
-    
-    motor.move_to_start()
-
-    # Loop to move motor step by step
-    while motor.current_position_mm < motor.motor_end:
-        # Move motor to the next step
-        motor.next_step()
-        
-        # Execute other commands here
-        # ...
-        print(f"Motor moved to {motor.current_position_mm}mm")
-        # Add a delay or wait for user input or signal from other script as needed
-        time.sleep(1)
-    motor.move_to_home()
-    print(f"Motor moved to {motor.current_position_mm}mm")
-    motor.close()  # Close the motor port when done
-    """
     
     
 

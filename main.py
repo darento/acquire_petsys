@@ -150,22 +150,16 @@ def move_motors_step_by_step_and_acquire_data(motors: List[MotorControl],
     with open(log_file, 'a') as f:        
         f.write("file_name" + "\t" + '\t'.join(str(m.motor_name) + "_mm" for m in motors) + '\n')           
         
+    # Create an array of absolute positions
     position_matrix = product(*[m.array_of_positions() for m in motors])
+    
+    # Iterate over all the possible combinations of the iterables
     for it, positions in enumerate(position_matrix):
         for motor, position in zip(motors, positions):
             motor.move_motor_to(motor.mm_to_steps(position))
             print_motor_position(motor)
         acquire_data_scan(bias_settings, disc_settings, yaml_dict, log_file, iterations, 
                             voltages, time_T1, time_T2, time_E, motors, step = it)
-    
-    # step_iteration = 0
-    # for motor in motors:
-    #     if motor.current_position_mm < motor.motor_end:                
-    #         acquire_data_scan(bias_settings, disc_settings, yaml_dict, log_file, iterations, 
-    #                             voltages, time_T1, time_T2, time_E, motors, step_iteration)
-    #         motor.next_step()
-    #         print_motor_position(motor)
-    #         step_iteration += 1
                 
 if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
