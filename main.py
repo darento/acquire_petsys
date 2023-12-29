@@ -65,7 +65,7 @@ def process_files(petsys_commands: Commands, file_path: str)-> None:
         estimate_remaining_time(iteration_times, total_iterations, current_iteration, string_process = "process_data")
         current_iteration += 1
 
-def acquire_data(bias_settings: BiasSettings, 
+def acquire_data_scan(bias_settings: BiasSettings, 
                  disc_settings: DiscSettings,
                  yaml_dict: Dict[str, Any], 
                  log_file: str, 
@@ -129,11 +129,6 @@ def acquire_data(bias_settings: BiasSettings,
     
 def print_motor_position(motor: MotorControl) -> None:
     print(f"Motor '{motor.motor_name}' moved to {motor.current_position_mm}mm")
-
-def move_motors_to_start(motors: List[MotorControl]) -> None:
-    for motor in motors:
-        motor.move_to_start()
-        print_motor_position(motor)
         
 def move_motors_to_home_and_close(motors: List[MotorControl]) -> None:
     for motor in motors:
@@ -154,16 +149,23 @@ def move_motors_step_by_step_and_acquire_data(motors: List[MotorControl],
     # Open the log file and write the header
     with open(log_file, 'a') as f:        
         f.write("file_name" + "\t" + '\t'.join(str(m.motor_name) + "_mm" for m in motors) + '\n')           
-            
-    step_iteration = 0
-    while any(motor.current_position_mm < motor.motor_end for motor in motors):
-        for motor in motors:
-            if motor.current_position_mm < motor.motor_end:                
-                acquire_data(bias_settings, disc_settings, yaml_dict, log_file, iterations, 
-                             voltages, time_T1, time_T2, time_E, motors, step_iteration)
-                motor.next_step()
-                print_motor_position(motor)
-                step_iteration += 1
+        
+    position_matrix = product(*[m.array_of_positions() for m in motors])
+    for it, positions in enumerate(position_matrix):
+        for motor, position in zip(motors, positions):
+            motor.move_motor_to(motor.mm_to_steps(position))
+            print_motor_position(motor)
+        acquire_data_scan(bias_settings, disc_settings, yaml_dict, log_file, iterations, 
+                            voltages, time_T1, time_T2, time_E, motors, step = it)
+    
+    # step_iteration = 0
+    # for motor in motors:
+    #     if motor.current_position_mm < motor.motor_end:                
+    #         acquire_data_scan(bias_settings, disc_settings, yaml_dict, log_file, iterations, 
+    #                             voltages, time_T1, time_T2, time_E, motors, step_iteration)
+    #         motor.next_step()
+    #         print_motor_position(motor)
+    #         step_iteration += 1
                 
 if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
@@ -209,7 +211,7 @@ if __name__ == "__main__":
             with open(log_file, 'a') as f:                
                 f.write("file_name" + '\n')
             # Run the acquire_data function
-            acquire_data(bias_settings, disc_settings, yaml_dict, log_file, iterations, voltages, time_T1, time_T2, time_E)
+            acquire_data_scan(bias_settings, disc_settings, yaml_dict, log_file, iterations, voltages, time_T1, time_T2, time_E)
         else:
             # Find the motor port
             motor_port = serial_ports()
@@ -225,9 +227,8 @@ if __name__ == "__main__":
                 motor_config = yaml_dict[motor_name]
                 motor = MotorControl(motor_port, motor_config['relation'],
                                     motor_config['microstep'], motor_config['start'],
-                                    motor_config['end'], motor_config['step_size'], motor_name)
+                                    motor_config['end'], motor_config['step_size'], motor_name, i+1)
                 motors.append(motor)
-            move_motors_to_start(motors)
             move_motors_step_by_step_and_acquire_data(motors, bias_settings, disc_settings, 
                                                     yaml_dict, log_file, iterations, 
                                                     voltages, time_T1, time_T2, time_E)

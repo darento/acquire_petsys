@@ -2,13 +2,10 @@ import serial
 import sys
 import glob
 import time
-
-from .utils import progress_bar
+import numpy as np
 
 # Constants
 STEPS_PER_REV = 200  # for a 1.8° stepper motor
-MOTOR_SPEED   = 200  # in steps per second
-TIME_SAVE     = 1    # in seconds
 
 class MotorControl:
     """Class to control a motor via serial communication."""
@@ -19,16 +16,18 @@ class MotorControl:
                  motor_start: float, 
                  motor_end: float, 
                  motor_step_size: float,
-                 motor_name: str) -> None:
+                 motor_name: str,
+                 motor_id: int) -> None:
         """Initialize the serial connection to the motor."""
         print(f"Initializing motor '{motor_name}'...")
         self.initialize_serial(serial_port)
-        self.configure_motor(motor_relation, motor_microstep, motor_start, motor_end, motor_step_size, motor_name)
+        self.configure_motor(motor_relation, motor_microstep, motor_start, motor_end, 
+                             motor_step_size, motor_name, motor_id)
 
     def initialize_serial(self, serial_port: str):
         """Initialize serial connection with robust error handling."""
         try:
-            self.ser = serial.Serial(port=serial_port, baudrate=9600, timeout=10)
+            self.ser = serial.Serial(port=serial_port, baudrate=9600, timeout=5)
             self.ser.rts = True
             self.__read_until(b"<>\n")
         except serial.SerialException as e:
@@ -40,7 +39,8 @@ class MotorControl:
                         motor_start: float,
                         motor_end: float,
                         motor_step_size: float,
-                        motor_name: str) -> None:
+                        motor_name: str,
+                        motor_id: int) -> None:
         """Configure motor parameters and initialize position."""
         # Motor parameters for step-wise movement
         self.motor_relation = motor_relation
@@ -52,6 +52,7 @@ class MotorControl:
         self.total_steps_required = 0
         self.steps_moved = 0
         self.motor_name = motor_name
+        self.motor_id = motor_id
     
     def __read_until(self, end_signal: bytes) -> bytes:
         """Read from the serial connection until the end signal is reached."""
@@ -79,28 +80,25 @@ class MotorControl:
         command = f"CON\n"
         self.__write_command(command.encode())
     
-    def move_motor(self, motor: int, direction: int, steps: int) -> None:
-        # Calculate the time needed to move the motor
-        time_to_travel = steps / MOTOR_SPEED
-        
+    def move_motor(self, direction: int, steps: int) -> None:
         """Send move command to the specified motor."""
-        command = f"MOVE,{motor},{direction},{steps}\n"
+        command = f"MOVE,{self.motor_id},{direction},{steps}\n"
         self.__write_command(command.encode())
         
-        # Wait for the motor to finish moving
-        total_time = time_to_travel + TIME_SAVE
-        
-        # Create a progress bar
-        #progress_bar(total_time)
+    def move_motor_to(self, position: int) -> None:
+        """Send move command to the specified motor."""
+        command = f"MOVETO,{self.motor_id},{position}\n"
+        self.__write_command(command.encode())
+        self.current_position_mm = position * self.motor_relation / STEPS_PER_REV / self.motor_microstep
 
     def set_num_motors(self, num_motors: int) -> None:
         """Set the number of motors."""
         command = f"SETMOTORS,{num_motors}\n"
         self.__write_command(command.encode())
 
-    def stop_motor(self, motor: int) -> None:
+    def stop_motor(self) -> None:
         """Send stop command to a specified motor."""
-        command = f"STOP,{motor}\n"
+        command = f"STOP,{self.motor_id}\n"
         self.__write_command(command.encode())
     
     def pingLED(self) -> None:
@@ -130,8 +128,10 @@ class MotorControl:
     
     def move_to_home(self) -> None:
         """Move motor to the home position."""
-        self.move_to_position(0.0)
-        self.steps_moved = 0  # Reset step count after moving to hom
+        self.move_motor_to(0)
+        self.steps_moved = 0  # Reset step count after moving to home position
+        self.current_position_mm = 0.0
+        print(f"Motor moved to HOME position.")
 
     def move_to_position(self, position_mm: float) -> None:
         """Move motor to a specific position."""        
@@ -141,7 +141,7 @@ class MotorControl:
         steps_needed = target_steps - self.steps_moved
 
         if steps_needed != 0:
-            self.move_motor(1, 1 if steps_needed > 0 else -1, abs(steps_needed))
+            self.move_motor(1 if steps_needed > 0 else -1, abs(steps_needed))
             self.steps_moved += steps_needed
             self.current_position_mm = position_mm
 
@@ -152,7 +152,17 @@ class MotorControl:
             self.move_to_position(next_position )
         else:
             print("Reached the end position.")
-            
+    
+    def mm_to_steps(self, position_mm: float) -> int:
+        """Convert mm to steps."""
+        target_revs = position_mm / self.motor_relation
+        target_steps = int(target_revs * STEPS_PER_REV * self.motor_microstep)
+        return target_steps 
+    
+    def array_of_positions(self) -> np.array:
+        """Create an array of absolute positions."""
+        positions_mm = np.arange(self.motor_start, self.motor_end + self.motor_step_size, self.motor_step_size)
+        return positions_mm           
         
 def serial_ports() -> str:
     """Lists serial port names.
@@ -160,6 +170,7 @@ def serial_ports() -> str:
     :raises EnvironmentError: On unsupported or unknown platforms
     :returns: A list of the serial ports available on the system
     """
+    print("Searching for motor port...")
     if sys.platform.startswith('win'):
         ports = [f'COM{i + 1}' for i in range(256)]
     elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
@@ -179,6 +190,7 @@ def serial_ports() -> str:
                     ser.write(b"CON\n")
                     com_response=ser.readline().strip().decode("utf-8")
                     if com_response == "MOTORUP":
+                        print(f"Motor found on port {port}")
                         return port
                 except UnicodeDecodeError as e:
                     print(f"UnicodeDecodeError on port {port}: {e}")
@@ -194,7 +206,22 @@ if __name__ == "__main__":
         print("No motor port found")
         sys.exit(1)
 
-    motor = MotorControl(motor_port, 0.5, 1, 2.0, 3.0, 0.5)
+    motor = MotorControl(motor_port, 0.5, 1, 3.0, 1.0, -0.25, "motorX", 1)
+    
+    
+    # Create an array of absolute positions
+    positions_mm = np.arange(motor.motor_start, motor.motor_end + motor.motor_step_size, motor.motor_step_size)
+    
+    # Move the motor to each position
+    for position_mm in [1.1, 0.5, 2.3, 4.5]:
+        motor.move_motor_to(motor.mm_to_steps(position_mm))
+        print(f"Motor moved to {motor.current_position_mm}mm")
+    motor.move_to_home()
+    print(f"Motor moved to {motor.current_position_mm}mm")
+    motor.close()
+    
+    """
+    
     motor.move_to_start()
 
     # Loop to move motor step by step
@@ -210,6 +237,7 @@ if __name__ == "__main__":
     motor.move_to_home()
     print(f"Motor moved to {motor.current_position_mm}mm")
     motor.close()  # Close the motor port when done
+    """
     
     
 

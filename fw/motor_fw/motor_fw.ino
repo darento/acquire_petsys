@@ -154,6 +154,26 @@ void moveMotor(int motor, int dir, long distance) {
   Serial.println("F");
 }
 
+void moveMotorTo(int motor, long position) {
+  if (motor == 1) {
+    X.moveTo(position);
+  } else if (motor == 2) {
+    Y.moveTo(position);
+  } else if (motor == 3) {
+    Z.moveTo(position);
+  }
+
+  // Espera a que el motor llegue a la nueva posición
+  while (X.distanceToGo() != 0 || Y.distanceToGo() != 0 || Z.distanceToGo() != 0) {
+    if (motor == 1) X.run();
+    if (motor == 2) Y.run();
+    if (motor == 3) Z.run();
+  }
+
+  // Indica la finalización del movimiento
+  Serial.println("F");
+}
+
 void stopMotor(int motor) {
   if (motor == 1) {
     X.stop();
@@ -188,7 +208,9 @@ void processCommand(String command) {
     stopMotor(motorNum);
   } else if (action == "MOVE"){
     processMoveCommand(command, motorNum, firstCommaIndex);
-  } else if (action == "LED"){
+  } else if (action == "MOVETO"){
+    processMoveToCommand(command, motorNum, firstCommaIndex);
+  }else if (action == "LED"){
     pingLED();
   }
 }
@@ -200,6 +222,14 @@ void processMoveCommand(String command, int motorNum, int firstCommaIndex) {
   long distance = command.substring(thirdCommaIndex + 1).toInt();
   if (motorNum > 0 && motorNum <= numMotoresActivos) {
     moveMotor(motorNum, dir, distance);
+  }
+}
+
+void processMoveToCommand(String command, int motorNum, int firstCommaIndex) {
+  int secondCommaIndex = command.indexOf(',', firstCommaIndex + 1);
+  int position = command.substring(secondCommaIndex + 1).toInt();
+  if (motorNum > 0 && motorNum <= numMotoresActivos) {
+    moveMotorTo(motorNum, position);
   }
 }
 
