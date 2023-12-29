@@ -19,6 +19,7 @@ import pandas as pd
 from typing import Dict, Any, List
 import os
 import sys
+from itertools import product
 
 from src.settings      import BiasSettings
 from src.settings      import DiscSettings
@@ -81,50 +82,51 @@ def acquire_data(bias_settings: BiasSettings,
     # Total number of iterations
     total_iterations = len(time_E) * len(time_T2) * len(time_T1) * len(voltages) * iterations
 
-    # Current iteration
-    current_iteration = 0    
+    # Create a list of iterables to iterate over
+    iterables = [range(iterations), voltages, time_T1, time_T2, time_E]
+    
+    # Iterate over all the possible combinations of the iterables
+    for it, v, t1, t2, e in product(*iterables):
+        # Record the start time of the iteration
+        start_time = time.time()
 
-    for it in range(iterations):
-        for v in voltages:
-            bias_settings.set_overvoltage(v)
-            bias_settings.write_bias_settings()
-            v_bias = v + yaml_dict["break_voltage"]
-            for t1 in time_T1:
-                disc_settings.set_threshold(t1, "vth_t1")
-                for t2 in time_T2:
-                    disc_settings.set_threshold(t2, "vth_t2")
-                    for e in time_E:
-                        # Record the start time of the iteration
-                        start_time = time.time()
+        bias_settings.set_overvoltage(v)
+        bias_settings.write_bias_settings()
+        v_bias = v + yaml_dict["break_voltage"]
 
-                        print(f"Setting bias to {v_bias}V, T1 to {t1}, T2 to {t2}, E to {e} at iteration {it}")
-                        disc_settings.set_threshold(e, "vth_e")
-                        disc_settings.write_disc_settings()
-                        # Check if the motor is present
-                        if step >= 0:
-                            # Include the motor position in the file name
-                            full_out_name = yaml_dict["out_name"] + "_pos{}_it{}_{}OV_{}T1_{}T2_{}E".format(step, it, v_bias, t1, t2, e)
-                        else:
-                            # Don't include the motor position in the file name
-                            full_out_name = yaml_dict["out_name"] + "_it{}_{}OV_{}T1_{}T2_{}E".format(it, v_bias, t1, t2, e)
-                        file_dir = yaml_dict["out_directory"] + full_out_name
-                        petsys_commands.acquire_data(full_out_name)
-                        print("------------------------------------------")
-                        time.sleep(1)
-                        with open(log_file, 'a') as f:
-                            if step >= 0:
-                                f.write(file_dir + "\t" + '\t'.join(str(m.current_position_mm) for m in motors) + '\n')    
-                            else:
-                                f.write(file_dir + '\n')
+        disc_settings.set_threshold(t1, "vth_t1")
+        disc_settings.set_threshold(t2, "vth_t2")
+        disc_settings.set_threshold(e, "vth_e")
+        disc_settings.write_disc_settings()
 
-                        # Record the end time of the iteration, and add it to the list
-                        end_time = time.time()
-                        iteration_times.append(end_time - start_time)
+        print(f"Setting bias to {v_bias}V, T1 to {t1}, T2 to {t2}, E to {e} at iteration {it}")
 
-                        estimate_remaining_time(iteration_times, total_iterations, current_iteration, string_process = "acquire_data")
+        # Check if the motor is present
+        if step >= 0:
+            # Include the motor position in the file name
+            full_out_name = yaml_dict["out_name"] + "_pos{}_it{}_{}OV_{}T1_{}T2_{}E".format(step, it, v_bias, t1, t2, e)
+        else:
+            # Don't include the motor position in the file name
+            full_out_name = yaml_dict["out_name"] + "_it{}_{}OV_{}T1_{}T2_{}E".format(it, v_bias, t1, t2, e)
 
-                        current_iteration += 1
+        file_dir = yaml_dict["out_directory"] + full_out_name
+        petsys_commands.acquire_data(full_out_name)
 
+        print("------------------------------------------")
+        time.sleep(1)
+
+        with open(log_file, 'a') as f:
+            if step >= 0:
+                f.write(file_dir + "\t" + '\t'.join(str(m.current_position_mm) for m in motors) + '\n')    
+            else:
+                f.write(file_dir + '\n')
+
+        # Record the end time of the iteration, and add it to the list
+        end_time = time.time()
+        iteration_times.append(end_time - start_time)
+
+        estimate_remaining_time(iteration_times, total_iterations, it, string_process = "acquire_data")
+    
 def print_motor_position(motor: MotorControl) -> None:
     print(f"Motor '{motor.motor_name}' moved to {motor.current_position_mm}mm")
 
