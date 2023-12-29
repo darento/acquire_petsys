@@ -52,3 +52,29 @@ def validate_yaml_dict(yaml_dict: Dict[str, Any]) -> None:
     assert isinstance(yaml_dict["vth_e"], list), "vth_e debe ser una lista"
     assert all(isinstance(i, int) for i in yaml_dict["vth_e"]), "Todos los elementos en vth_e deben ser enteros"
     assert isinstance(yaml_dict["iterations"], int), "iterations debe ser un entero"
+    # Validate motor flag
+    if 'motor' in yaml_dict:
+        assert isinstance(yaml_dict['motor'], bool), "'motor' should be a boolean"
+    # Validate number of motors
+    if 'num_motors' in yaml_dict:
+        assert yaml_dict['num_motors'] in [1, 2, 3], "'num_motors' should be 1, 2, or 3"
+    # Validate motor parameters
+    for motor in ['motorX', 'motorY', 'motorZ']:
+        if motor in yaml_dict:
+            assert 'type' in yaml_dict[motor], f"'type' is missing in {motor}"
+            assert isinstance(yaml_dict[motor]['type'], str), f"'type' in {motor} should be a string"
+
+            assert 'start' in yaml_dict[motor], f"'start' is missing in {motor}"
+            assert isinstance(yaml_dict[motor]['start'], (int, float)), f"'start' in {motor} should be a number"
+
+            assert 'end' in yaml_dict[motor], f"'end' is missing in {motor}"
+            assert isinstance(yaml_dict[motor]['end'], (int, float)), f"'end' in {motor} should be a number"
+
+            assert 'step_size' in yaml_dict[motor], f"'step_size' is missing in {motor}"
+            assert isinstance(yaml_dict[motor]['step_size'], (int, float)), f"'step_size' in {motor} should be a number"
+
+            assert 'microstep' in yaml_dict[motor], f"'microstep' is missing in {motor}"
+            assert isinstance(yaml_dict[motor]['microstep'], int), f"'microstep' in {motor} should be an integer"
+
+            assert 'relation' in yaml_dict[motor], f"'relation' is missing in {motor}"
+            assert isinstance(yaml_dict[motor]['relation'], (int, float)), f"'relation' in {motor} should be a number"
