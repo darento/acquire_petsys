@@ -3,8 +3,12 @@ import sys
 import glob
 import time
 
+from .utils import progress_bar
+
 # Constants
 STEPS_PER_REV = 200  # for a 1.8° stepper motor
+MOTOR_SPEED   = 200  # in steps per second
+TIME_SAVE     = 1    # in seconds
 
 class MotorControl:
     """Class to control a motor via serial communication."""
@@ -17,6 +21,7 @@ class MotorControl:
                  motor_step_size: float,
                  motor_name: str) -> None:
         """Initialize the serial connection to the motor."""
+        print(f"Initializing motor '{motor_name}'...")
         self.initialize_serial(serial_port)
         self.configure_motor(motor_relation, motor_microstep, motor_start, motor_end, motor_step_size, motor_name)
 
@@ -60,7 +65,10 @@ class MotorControl:
         try:
             self.ser.write(command)
             print(f"Sent command: {command}")
-            response = self.ser.read_until(b'F').decode().strip()  # Wait for an 'F', make it sequential
+            # Wait for an 'F', make it sequential
+            response = ''
+            while not response.endswith('F'):
+                response += self.ser.read_until(b'F').decode().strip() 
             print(f"Received response: {response}")
         except serial.SerialException as e:
             print(f"Failed to send command: {e}")
@@ -72,9 +80,18 @@ class MotorControl:
         self.__write_command(command.encode())
     
     def move_motor(self, motor: int, direction: int, steps: int) -> None:
+        # Calculate the time needed to move the motor
+        time_to_travel = steps / MOTOR_SPEED
+        
         """Send move command to the specified motor."""
         command = f"MOVE,{motor},{direction},{steps}\n"
         self.__write_command(command.encode())
+        
+        # Wait for the motor to finish moving
+        total_time = time_to_travel + TIME_SAVE
+        
+        # Create a progress bar
+        #progress_bar(total_time)
 
     def set_num_motors(self, num_motors: int) -> None:
         """Set the number of motors."""
