@@ -49,6 +49,10 @@ Estos son los pines para una Arduino MEGA 2560 y una Ramp 1.4
 //Los siguientes pines estan adaptados a una Arduino UNO r3 y una
 //CNC shield V3
 
+//TODO: 
+// - hacer que los motores se muevan un poco al llegar al home
+// - hacer quizás que los motores se muevan a home al encender?
+
 #include <AccelStepper.h>
 
 #define X_STEP_PIN      2
@@ -95,10 +99,12 @@ AccelStepper Z=AccelStepper(motorInterfaceType,Z_STEP_PIN,Z_DIR_PIN);
 AccelStepper E=AccelStepper(motorInterfaceType,E_STEP_PIN,E_DIR_PIN);
 AccelStepper Q=AccelStepper(motorInterfaceType,Q_STEP_PIN,Q_DIR_PIN);
 
-void setupMotor(AccelStepper& motor, int stepPin, int dirPin, int enablePin) {
+void setupMotor(AccelStepper& motor, int stepPin, int dirPin, int enablePin, int minPin, int maxPin) {
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
   pinMode(enablePin, OUTPUT);
+  pinMode(minPin, INPUT_PULLUP);
+  pinMode(maxPin, INPUT_PULLUP);
   digitalWrite(enablePin, LOW);
   motor.setMaxSpeed(200);
   motor.setSpeed(200);
@@ -108,9 +114,9 @@ void setupMotor(AccelStepper& motor, int stepPin, int dirPin, int enablePin) {
 void setup() {
   pinMode(LED_PIN  , OUTPUT);
 
-  setupMotor(X, X_STEP_PIN, X_DIR_PIN, X_ENABLE_PIN);
-  setupMotor(Y, Y_STEP_PIN, Y_DIR_PIN, Y_ENABLE_PIN);
-  setupMotor(Z, Z_STEP_PIN, Z_DIR_PIN, Z_ENABLE_PIN);
+  setupMotor(X, X_STEP_PIN, X_DIR_PIN, X_ENABLE_PIN, X_MIN_PIN, X_MAX_PIN);
+  setupMotor(Y, Y_STEP_PIN, Y_DIR_PIN, Y_ENABLE_PIN, Y_MIN_PIN, Y_MAX_PIN);
+  setupMotor(Z, Z_STEP_PIN, Z_DIR_PIN, Z_ENABLE_PIN, Z_MIN_PIN, Z_MAX_PIN);
 
   Serial.begin(9600);
   delay(1000);
@@ -136,17 +142,29 @@ void setNumMotores(int num) {
   Serial.println("F");
 }
 
-void moveMotor(int motor, int dir, long distance) {
+void moveMotor(int motor, int dir, long distance, bool isAbsolute) {
   if (motor == 1) {
-    X.move(dir * distance);
+    if (isAbsolute) {
+      X.moveTo(distance);
+    } else {
+      X.move(dir * distance);
+    }
   } else if (motor == 2) {
-    Y.move(dir * distance);
+    if (isAbsolute) {
+      Y.moveTo(distance);
+    } else {
+      Y.move(dir * distance);
+    }
   } else if (motor == 3) {
-    Z.move(dir * distance);
+    if (isAbsolute) {
+      Z.moveTo(distance);
+    } else {
+      Z.move(dir * distance);
+    }
   }
-  int contador = 0; // Inicializar contador
+
   while (X.distanceToGo() != 0 || Y.distanceToGo() != 0 || Z.distanceToGo() != 0) {
-    contador++; // Incrementar contador en cada iteración del bucle
+    checkEndstopsAndStopMotor(motor);
     if (motor == 1) X.run();
     if (motor == 2) Y.run();
     if (motor == 3) Z.run();
@@ -154,42 +172,23 @@ void moveMotor(int motor, int dir, long distance) {
   Serial.println("F");
 }
 
-void moveMotorTo(int motor, long position) {
-  if (motor == 1) {
-    X.moveTo(position);
-  } else if (motor == 2) {
-    Y.moveTo(position);
-  } else if (motor == 3) {
-    Z.moveTo(position);
+void checkEndstopsAndStopMotor(int motor) {
+  if (motor == 1 && (digitalRead(X_MIN_PIN) == LOW || digitalRead(X_MAX_PIN) == LOW)) {
+    stopMotor(motor);
+  } else if (motor == 2 && (digitalRead(Y_MIN_PIN) == LOW || digitalRead(Y_MAX_PIN) == LOW)) {
+    stopMotor(motor);
+  } else if (motor == 3 && (digitalRead(Z_MIN_PIN) == LOW || digitalRead(Z_MAX_PIN) == LOW)) {
+    stopMotor(motor);
   }
-
-  // Espera a que el motor llegue a la nueva posición
-  while (X.distanceToGo() != 0 || Y.distanceToGo() != 0 || Z.distanceToGo() != 0) {
-    if (motor == 1) X.run();
-    if (motor == 2) Y.run();
-    if (motor == 3) Z.run();
-  }
-
-  // Indica la finalización del movimiento
-  Serial.println("F");
 }
 
 void stopMotor(int motor) {
   if (motor == 1) {
-    X.stop();
-    while(X.isRunning()) {
-      X.run();
-    }
+    X.setCurrentPosition(X.currentPosition());
   } else if (motor == 2) {
-    Y.stop();
-    while(Y.isRunning()) {
-      Y.run();
-    }
+    Y.setCurrentPosition(Y.currentPosition());
   } else if (motor == 3) {
-    Z.stop();
-    while(Z.isRunning()) {
-      Z.run();
-    }
+    Z.setCurrentPosition(Z.currentPosition());
   }
   Serial.println("F");
 }
@@ -207,29 +206,21 @@ void processCommand(String command) {
   } else if (action == "STOP") {
     stopMotor(motorNum);
   } else if (action == "MOVE"){
-    processMoveCommand(command, motorNum, firstCommaIndex);
+    processMoveCommand(command, motorNum, firstCommaIndex, false);
   } else if (action == "MOVETO"){
-    processMoveToCommand(command, motorNum, firstCommaIndex);
+    processMoveCommand(command, motorNum, firstCommaIndex, true);
   }else if (action == "LED"){
     pingLED();
   }
 }
 
-void processMoveCommand(String command, int motorNum, int firstCommaIndex) {
+void processMoveCommand(String command, int motorNum, int firstCommaIndex, bool isAbsolute) {
   int secondCommaIndex = command.indexOf(',', firstCommaIndex + 1);
   int thirdCommaIndex = command.indexOf(',', secondCommaIndex + 1);
-  int dir = command.substring(secondCommaIndex + 1, thirdCommaIndex).toInt();
-  long distance = command.substring(thirdCommaIndex + 1).toInt();
+  int dir = isAbsolute ? 0 : command.substring(secondCommaIndex + 1, thirdCommaIndex).toInt();
+  long distance = command.substring(isAbsolute ? secondCommaIndex + 1 : thirdCommaIndex + 1).toInt();
   if (motorNum > 0 && motorNum <= numMotoresActivos) {
-    moveMotor(motorNum, dir, distance);
-  }
-}
-
-void processMoveToCommand(String command, int motorNum, int firstCommaIndex) {
-  int secondCommaIndex = command.indexOf(',', firstCommaIndex + 1);
-  int position = command.substring(secondCommaIndex + 1).toInt();
-  if (motorNum > 0 && motorNum <= numMotoresActivos) {
-    moveMotorTo(motorNum, position);
+    moveMotor(motorNum, dir, distance, isAbsolute);
   }
 }
 

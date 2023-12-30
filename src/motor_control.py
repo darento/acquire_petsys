@@ -109,7 +109,7 @@ class MotorControl:
 
     def set_num_motors(self, num_motors: int) -> None:
         """Set the number of motors."""
-        command =  self.format_command("SETMOROS", num_motors) 
+        command =  self.format_command("SETMOTORS", num_motors) 
         self.__write_command(command)
 
     def stop_motor(self) -> None:
