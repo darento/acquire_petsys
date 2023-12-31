@@ -149,13 +149,6 @@ class MotorControl:
         command = self._format_command("LED")  
         self.__write_command(command)    
 
-    def read(self) -> str:
-        """Read a line from the serial connection."""
-        try:
-            return self.ser.readline().strip().decode("utf-8")
-        except serial.SerialException as e:
-            print(f"Failed to read from serial port: {e}")
-
     def find_home(self) -> None:
         """Find the home position."""
         command = self._format_command("MOVE", self.motor_id, -1, 1000000) # Move motor to the home position
@@ -175,31 +168,6 @@ class MotorControl:
         self.steps_moved = 0  # Reset step count after moving to home position
         self.current_position_mm = 0.0
         print(f"Motor moved to HOME position.")
-    
-    def move_to_start(self) -> None:
-        """Prepare motor for step-wise movement."""
-        # Move to starting position if necessary (This assumes absolute positioning)
-        # You might need to reset or track the position if the motor doesn't have absolute positioning
-        self.move_to_position(self.motor_start)    
-
-    def move_to_position(self, position_mm: float) -> None:
-        """Move motor to a specific position."""        
-        # Calculate steps needed to reach the position
-        target_steps = self.mm_to_steps(position_mm)
-        steps_needed = target_steps - self.steps_moved
-
-        if steps_needed != 0:
-            self.move_motor(1 if steps_needed > 0 else -1, abs(steps_needed))
-            self.steps_moved += steps_needed
-            self.current_position_mm = position_mm
-
-    def next_step(self) -> None:
-        """Move motor to the next step."""
-        if self.current_position_mm < self.motor_end:
-            next_position = self.current_position_mm + self.motor_step_size
-            self.move_to_position(next_position )
-        else:
-            print("Reached the end position.")
     
     def mm_to_steps(self, position_mm: float) -> int:
         """Convert mm to steps."""
