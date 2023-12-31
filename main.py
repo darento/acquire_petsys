@@ -223,6 +223,8 @@ if __name__ == "__main__":
                                     motor_config['microstep'], motor_config['start'],
                                     motor_config['end'], motor_config['step_size'], motor_name, i+1)
                 motors.append(motor)
+            for motor in motors:
+                motor.find_home()
             move_motors_step_by_step_and_acquire_data(motors, bias_settings, disc_settings, 
                                                     yaml_dict, log_file, iterations, 
                                                     voltages, time_T1, time_T2, time_E)

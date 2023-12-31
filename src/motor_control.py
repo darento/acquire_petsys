@@ -28,7 +28,7 @@ class MotorControl:
         self.configure_motor(motor_relation, motor_microstep, motor_start, motor_end, 
                              motor_step_size, motor_name, motor_id)
         self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.WARNING)
+        self.logger.setLevel(logging.DEBUG)
 
     def initialize_serial(self, serial_port: str):
         """Initialize serial connection with robust error handling."""
@@ -135,25 +135,39 @@ class MotorControl:
             return self.ser.readline().strip().decode("utf-8")
         except serial.SerialException as e:
             print(f"Failed to read from serial port: {e}")
-            
-    def move_to_start(self) -> None:
-        """Prepare motor for step-wise movement."""
-        # Move to starting position if necessary (This assumes absolute positioning)
-        # You might need to reset or track the position if the motor doesn't have absolute positioning
-        self.move_to_position(self.motor_start)
-    
+
+    def find_home(self) -> None:
+        """Find the home position."""
+        command = self.format_command("MOVE", self.motor_id, -1, 1000000) # Move motor to the home position
+        print(f"Searching for motor to HOME position...")
+        self.__write_command(command)
+        self.current_position_mm = 0.0
+        self.steps_moved = 0  # Reset step count after moving to home position
+        
+        # Send the SET_ZERO command to set absolute position to 0
+        command = self.format_command("SET_ZERO", self.motor_id)
+        self.__write_command(command)
+
     def move_to_home(self) -> None:
         """Move motor to the home position."""
+        print(f"Moving motor to HOME position...")
+        print(f"Current position: {self.current_position_mm}mm")
+        print(-self.mm_to_steps(self.current_position_mm))
         self.move_motor_to(0)
         self.steps_moved = 0  # Reset step count after moving to home position
         self.current_position_mm = 0.0
         print(f"Motor moved to HOME position.")
+    
+    def move_to_start(self) -> None:
+        """Prepare motor for step-wise movement."""
+        # Move to starting position if necessary (This assumes absolute positioning)
+        # You might need to reset or track the position if the motor doesn't have absolute positioning
+        self.move_to_position(self.motor_start)    
 
     def move_to_position(self, position_mm: float) -> None:
         """Move motor to a specific position."""        
         # Calculate steps needed to reach the position
-        target_revs = position_mm / self.motor_relation
-        target_steps = int(target_revs * STEPS_PER_REV * self.motor_microstep)
+        target_steps = self.mm_to_steps(position_mm)
         steps_needed = target_steps - self.steps_moved
 
         if steps_needed != 0:

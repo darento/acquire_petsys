@@ -47,11 +47,7 @@ Estos son los pines para una Arduino MEGA 2560 y una Ramp 1.4
 */
 
 //Los siguientes pines estan adaptados a una Arduino UNO r3 y una
-//CNC shield V3
-
-//TODO: 
-// - hacer que los motores se muevan un poco al llegar al home
-// - hacer quizás que los motores se muevan a home al encender?
+//CNC shield V3.0 con drivers DRV8825/A4988
 
 #include <AccelStepper.h>
 
@@ -142,6 +138,16 @@ void setNumMotores(int num) {
   Serial.println("F");
 }
 
+void processMoveCommand(String command, int motorNum, int firstCommaIndex, bool isAbsolute) {
+  int secondCommaIndex = command.indexOf(',', firstCommaIndex + 1);
+  int thirdCommaIndex = command.indexOf(',', secondCommaIndex + 1);
+  int dir = isAbsolute ? 0 : command.substring(secondCommaIndex + 1, thirdCommaIndex).toInt();
+  long distance = command.substring(isAbsolute ? secondCommaIndex + 1 : thirdCommaIndex + 1).toInt();
+  if (motorNum > 0 && motorNum <= numMotoresActivos) {
+    moveMotor(motorNum, dir, distance, isAbsolute);
+  }
+}
+
 void moveMotor(int motor, int dir, long distance, bool isAbsolute) {
   if (motor == 1) {
     if (isAbsolute) {
@@ -164,7 +170,10 @@ void moveMotor(int motor, int dir, long distance, bool isAbsolute) {
   }
 
   while (X.distanceToGo() != 0 || Y.distanceToGo() != 0 || Z.distanceToGo() != 0) {
-    checkEndstopsAndStopMotor(motor);
+    if (isAbsolute) {
+      dir = (distance > (motor == 1 ? X.currentPosition() : motor == 2 ? Y.currentPosition() : Z.currentPosition())) ? 1 : -1;
+    }
+    checkEndstopsAndStopMotors(motor, dir);
     if (motor == 1) X.run();
     if (motor == 2) Y.run();
     if (motor == 3) Z.run();
@@ -172,23 +181,52 @@ void moveMotor(int motor, int dir, long distance, bool isAbsolute) {
   Serial.println("F");
 }
 
-void checkEndstopsAndStopMotor(int motor) {
-  if (motor == 1 && (digitalRead(X_MIN_PIN) == LOW || digitalRead(X_MAX_PIN) == LOW)) {
-    stopMotor(motor);
-  } else if (motor == 2 && (digitalRead(Y_MIN_PIN) == LOW || digitalRead(Y_MAX_PIN) == LOW)) {
-    stopMotor(motor);
-  } else if (motor == 3 && (digitalRead(Z_MIN_PIN) == LOW || digitalRead(Z_MAX_PIN) == LOW)) {
-    stopMotor(motor);
+void checkEndstopAndStopMotor(int motor, int dir, int minPin, int maxPin, bool& endstopHit, AccelStepper& stepper) {
+  if (digitalRead(minPin) == LOW || digitalRead(maxPin) == LOW) {
+    if (!endstopHit) {
+      stopMotor(motor, true);
+      stepper.move(-dir * 100); // Move a small amount in the opposite direction
+      endstopHit = true;
+    }
+  } else {
+    endstopHit = false;
   }
 }
 
-void stopMotor(int motor) {
+void checkEndstopsAndStopMotors(int motor, int dir) {
+  static bool endstopHitX = false;
+  static bool endstopHitY = false;
+  static bool endstopHitZ = false;
+
+  if (motor == 1) {
+    checkEndstopAndStopMotor(motor, dir, X_MIN_PIN, X_MAX_PIN, endstopHitX, X);
+  } else if (motor == 2) {
+    checkEndstopAndStopMotor(motor, dir, Y_MIN_PIN, Y_MAX_PIN, endstopHitY, Y);
+  } else if (motor == 3) {
+    checkEndstopAndStopMotor(motor, dir, Z_MIN_PIN, Z_MAX_PIN, endstopHitZ, Z);
+  }
+}
+
+void stopMotor(int motor, bool fromEndStop) {
   if (motor == 1) {
     X.setCurrentPosition(X.currentPosition());
   } else if (motor == 2) {
     Y.setCurrentPosition(Y.currentPosition());
   } else if (motor == 3) {
     Z.setCurrentPosition(Z.currentPosition());
+  }
+  if (!fromEndStop){
+    Serial.println("F");
+  }  
+}
+
+void setCurrentPositionToZero(int motorNum) {
+  if (motorNum == 1) {
+    X.setCurrentPosition(0);
+  } else if (motorNum == 2) {
+    Y.setCurrentPosition(0);
+  } else if (motorNum == 3) {
+    Z.setCurrentPosition(0);
   }
   Serial.println("F");
 }
@@ -204,23 +242,15 @@ void processCommand(String command) {
   } else if (action == "SETMOTORS") {
     setNumMotores(motorNum); // In this case, motorNum corresponds to the number of motors to set 
   } else if (action == "STOP") {
-    stopMotor(motorNum);
-  } else if (action == "MOVE"){
+    stopMotor(motorNum, false);
+  } else if (action == "MOVE") {
     processMoveCommand(command, motorNum, firstCommaIndex, false);
-  } else if (action == "MOVETO"){
+  } else if (action == "MOVETO") {
     processMoveCommand(command, motorNum, firstCommaIndex, true);
-  }else if (action == "LED"){
+  } else if (action == "SET_ZERO") {
+    setCurrentPositionToZero(motorNum);
+  } else if (action == "LED") {
     pingLED();
-  }
-}
-
-void processMoveCommand(String command, int motorNum, int firstCommaIndex, bool isAbsolute) {
-  int secondCommaIndex = command.indexOf(',', firstCommaIndex + 1);
-  int thirdCommaIndex = command.indexOf(',', secondCommaIndex + 1);
-  int dir = isAbsolute ? 0 : command.substring(secondCommaIndex + 1, thirdCommaIndex).toInt();
-  long distance = command.substring(isAbsolute ? secondCommaIndex + 1 : thirdCommaIndex + 1).toInt();
-  if (motorNum > 0 && motorNum <= numMotoresActivos) {
-    moveMotor(motorNum, dir, distance, isAbsolute);
   }
 }
 
