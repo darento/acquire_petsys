@@ -21,31 +21,35 @@ import os
 import sys
 from itertools import product
 
-from src.settings      import BiasSettings
-from src.settings      import DiscSettings
-from src.settings      import Commands
-from src.config        import get_ref_params
-from src.config        import validate_yaml_dict
-from src.utils         import estimate_remaining_time
+from src.settings import BiasSettings
+from src.settings import DiscSettings
+from src.settings import Commands
+from src.config import get_ref_params
+from src.config import validate_yaml_dict
+from src.utils import estimate_remaining_time
 from src.motor_control import MotorControl
 from src.motor_control import serial_ports
 
+
 def confirm_file_deletion(file_path: str) -> None:
     if os.path.exists(file_path):
-        confirm = ''
-        while confirm.lower() not in ['y', 'n']:
-            confirm = input(f"The file {file_path} already exists. Do you want to delete it? (y/n): ")
-            if confirm.lower() not in ['y', 'n']:
+        confirm = ""
+        while confirm.lower() not in ["y", "n"]:
+            confirm = input(
+                f"The file {file_path} already exists. Do you want to delete it? (y/n): "
+            )
+            if confirm.lower() not in ["y", "n"]:
                 print("Invalid option.")
-        if confirm.lower() == 'y':
+        if confirm.lower() == "y":
             os.remove(file_path)
-        elif confirm.lower() == 'n':
+        elif confirm.lower() == "n":
             print(f"Appending to the end of the file with new elements.")
 
-def process_files(petsys_commands: Commands, file_path: str)-> None:
-    with open(file_path, 'r') as f:
+
+def process_files(petsys_commands: Commands, file_path: str) -> None:
+    with open(file_path, "r") as f:
         next(f)  # Skip the header
-        file_names = [line.split('\t')[0] for line in f]
+        file_names = [line.split("\t")[0] for line in f]
     # initialize a list to store the time each iteration takes
     iteration_times = []
     # total number of iterations
@@ -58,33 +62,43 @@ def process_files(petsys_commands: Commands, file_path: str)-> None:
         start_time = time.time()
 
         petsys_commands.process_data(full_out_name)
-        
+
         # Record the end time of the iteration, and add it to the list
         end_time = time.time()
         iteration_times.append(end_time - start_time)
-        estimate_remaining_time(iteration_times, total_iterations, current_iteration, string_process = "process_data")
+        estimate_remaining_time(
+            iteration_times,
+            total_iterations,
+            current_iteration,
+            string_process="process_data",
+        )
         current_iteration += 1
 
-def acquire_data_scan(bias_settings: BiasSettings, 
-                 disc_settings: DiscSettings,
-                 yaml_dict: Dict[str, Any], 
-                 log_file: str, 
-                 iterations: int, 
-                 voltages: list, 
-                 time_T1:list, 
-                 time_T2:list, 
-                 time_E:list,
-                 motors: List[MotorControl] = None,
-                 step=-1)-> None:
+
+def acquire_data_scan(
+    bias_settings: BiasSettings,
+    disc_settings: DiscSettings,
+    yaml_dict: Dict[str, Any],
+    log_file: str,
+    iterations: int,
+    voltages: list,
+    time_T1: list,
+    time_T2: list,
+    time_E: list,
+    motors: List[MotorControl] = None,
+    step=-1,
+) -> None:
     # Initialize a list to store the time each iteration takes
     iteration_times = []
 
     # Total number of iterations
-    total_iterations = len(time_E) * len(time_T2) * len(time_T1) * len(voltages) * iterations
+    total_iterations = (
+        len(time_E) * len(time_T2) * len(time_T1) * len(voltages) * iterations
+    )
 
     # Create a list of iterables to iterate over
     iterables = [range(iterations), voltages, time_T1, time_T2, time_E]
-    
+
     # Iterate over all the possible combinations of the iterables
     for it, v, t1, t2, e in product(*iterables):
         # Record the start time of the iteration
@@ -99,15 +113,21 @@ def acquire_data_scan(bias_settings: BiasSettings,
         disc_settings.set_threshold(e, "vth_e")
         disc_settings.write_disc_settings()
 
-        print(f"Setting bias to {v_bias}V, T1 to {t1}, T2 to {t2}, E to {e} at iteration {it}")
+        print(
+            f"Setting bias to {v_bias}V, T1 to {t1}, T2 to {t2}, E to {e} at iteration {it}"
+        )
 
         # Check if the motor is present
         if step >= 0:
             # Include the motor position in the file name
-            full_out_name = yaml_dict["out_name"] + "_pos{}_it{}_{}OV_{}T1_{}T2_{}E".format(step, it, v_bias, t1, t2, e)
+            full_out_name = yaml_dict[
+                "out_name"
+            ] + "_pos{}_it{}_{}OV_{}T1_{}T2_{}E".format(step, it, v_bias, t1, t2, e)
         else:
             # Don't include the motor position in the file name
-            full_out_name = yaml_dict["out_name"] + "_it{}_{}OV_{}T1_{}T2_{}E".format(it, v_bias, t1, t2, e)
+            full_out_name = yaml_dict["out_name"] + "_it{}_{}OV_{}T1_{}T2_{}E".format(
+                it, v_bias, t1, t2, e
+            )
 
         file_dir = yaml_dict["out_directory"] + full_out_name
         petsys_commands.acquire_data(full_out_name)
@@ -115,69 +135,98 @@ def acquire_data_scan(bias_settings: BiasSettings,
         print("------------------------------------------")
         time.sleep(1)
 
-        with open(log_file, 'a') as f:
+        with open(log_file, "a") as f:
             if step >= 0:
-                f.write(file_dir + "\t" + '\t'.join(str(m.current_position_mm) for m in motors) + '\n')    
+                f.write(
+                    file_dir
+                    + "\t"
+                    + "\t".join(str(m.current_position_mm) for m in motors)
+                    + "\n"
+                )
             else:
-                f.write(file_dir + '\n')
+                f.write(file_dir + "\n")
 
         # Record the end time of the iteration, and add it to the list
         end_time = time.time()
         iteration_times.append(end_time - start_time)
 
-        estimate_remaining_time(iteration_times, total_iterations, it, string_process = "acquire_data")
-    
+        estimate_remaining_time(
+            iteration_times, total_iterations, it, string_process="acquire_data"
+        )
+
+
 def print_motor_position(motor: MotorControl) -> None:
     print(f"Motor '{motor.motor_name}' moved to {motor.current_position_mm}mm")
-        
+
+
 def move_motors_to_home_and_close(motors: List[MotorControl]) -> None:
     for motor in motors:
         motor.move_to_home()
         print_motor_position(motor)
         motor.close()
 
-def move_motors_step_by_step_and_acquire_data(motors: List[MotorControl], 
-                                              bias_settings: BiasSettings,
-                                              disc_settings: DiscSettings,
-                                              yaml_dict: Dict[str, Any],
-                                              log_file: str,
-                                              iterations: int,
-                                              voltages: list,
-                                              time_T1: list,
-                                              time_T2: list,
-                                              time_E: list) -> None:
+
+def move_motors_step_by_step_and_acquire_data(
+    motors: List[MotorControl],
+    bias_settings: BiasSettings,
+    disc_settings: DiscSettings,
+    yaml_dict: Dict[str, Any],
+    log_file: str,
+    iterations: int,
+    voltages: list,
+    time_T1: list,
+    time_T2: list,
+    time_E: list,
+) -> None:
     # Open the log file and write the header
-    with open(log_file, 'a') as f:        
-        f.write("file_name" + "\t" + '\t'.join(str(m.motor_name) + "_mm" for m in motors) + '\n')           
-        
+    with open(log_file, "a") as f:
+        f.write(
+            "file_name"
+            + "\t"
+            + "\t".join(str(m.motor_name) + "_mm" for m in motors)
+            + "\n"
+        )
+
     # Create an array of absolute positions
     position_matrix = product(*[m.array_of_positions() for m in motors])
-    
+
     # Iterate over all the possible combinations of the iterables
     for it, positions in enumerate(position_matrix):
         for motor, position in zip(motors, positions):
             motor.move_motor_to(motor.mm_to_steps(position))
             print_motor_position(motor)
-        acquire_data_scan(bias_settings, disc_settings, yaml_dict, log_file, iterations, 
-                            voltages, time_T1, time_T2, time_E, motors, step = it)
-                
+        acquire_data_scan(
+            bias_settings,
+            disc_settings,
+            yaml_dict,
+            log_file,
+            iterations,
+            voltages,
+            time_T1,
+            time_T2,
+            time_E,
+            motors,
+            step=it,
+        )
+
+
 if __name__ == "__main__":
-    pd.set_option('display.max_rows', None)
+    pd.set_option("display.max_rows", None)
     args = docopt(__doc__)
     yaml_conf = args["YAMLCONF"]
     mode = args["-m"]
-    
+
     with open(yaml_conf) as yaml_reader:
-        yaml_dict = yaml.safe_load(yaml_reader)                
+        yaml_dict = yaml.safe_load(yaml_reader)
 
     validate_yaml_dict(yaml_dict)
-    
-    dir_path      = yaml_dict["config_directory"]
+
+    dir_path = yaml_dict["config_directory"]
     current_dir = os.getcwd()
 
     # get the bias and discriminator settings if they exist, otherwise a empty list is returned
     bias_ref_params, disc_ref_params = get_ref_params(yaml_dict)
-    
+
     # create the bias and discriminator settings objects with the reference detector parameters
     bias_settings = BiasSettings(yaml_dict, bias_ref_params)
     bias_settings.set_fixedvoltages()
@@ -190,22 +239,32 @@ if __name__ == "__main__":
     time_T2 = yaml_dict["vth_t2"]
     time_E = yaml_dict["vth_e"]
     iterations = yaml_dict["iterations"]
-    log_file = os.path.join(yaml_dict["out_directory"], yaml_dict["out_name"] + '.log')
+    log_file = os.path.join(yaml_dict["out_directory"], yaml_dict["out_name"] + ".log")
 
     # change to the petsys directory to run the acquire_sipm_data command or process files
     petsys_directory = yaml_dict["petsys_directory"]
     os.chdir(petsys_directory)
-    
+
     if mode == "acquire" or mode == "both":
-        confirm_file_deletion(log_file) 
+        confirm_file_deletion(log_file)
 
         # Check if the motor flag is set to True
-        if not yaml_dict['motor']:
+        if not yaml_dict["motor"]:
             # Open the log file and write the header
-            with open(log_file, 'a') as f:                
-                f.write("file_name" + '\n')
+            with open(log_file, "a") as f:
+                f.write("file_name" + "\n")
             # Run the acquire_data function
-            acquire_data_scan(bias_settings, disc_settings, yaml_dict, log_file, iterations, voltages, time_T1, time_T2, time_E)
+            acquire_data_scan(
+                bias_settings,
+                disc_settings,
+                yaml_dict,
+                log_file,
+                iterations,
+                voltages,
+                time_T1,
+                time_T2,
+                time_E,
+            )
         else:
             # Find the motor port
             motor_port = serial_ports()
@@ -216,18 +275,37 @@ if __name__ == "__main__":
 
             # Create a MotorControl instance for each motor
             motors = []
-            for i in range(yaml_dict['num_motors']):
+            for i in range(yaml_dict["num_motors"]):
                 motor_name = f"motor{chr(88 + i)}"  # 88 is ASCII for 'X'
                 motor_config = yaml_dict[motor_name]
-                motor = MotorControl(motor_port, motor_config['relation'],
-                                    motor_config['microstep'], motor_config['start'],
-                                    motor_config['end'], motor_config['step_size'], motor_name, i+1)
+                motor = MotorControl(
+                    motor_port,
+                    motor_config["relation"],
+                    motor_config["microstep"],
+                    motor_config["start"],
+                    motor_config["end"],
+                    motor_config["step_size"],
+                    motor_name,
+                    i + 1,
+                    motor_config["speed"],
+                    motor_config["max_speed"],
+                    motor_config["acceleration"],
+                )
                 motors.append(motor)
             for motor in motors:
                 motor.find_home()
-            move_motors_step_by_step_and_acquire_data(motors, bias_settings, disc_settings, 
-                                                    yaml_dict, log_file, iterations, 
-                                                    voltages, time_T1, time_T2, time_E)
+            move_motors_step_by_step_and_acquire_data(
+                motors,
+                bias_settings,
+                disc_settings,
+                yaml_dict,
+                log_file,
+                iterations,
+                voltages,
+                time_T1,
+                time_T2,
+                time_E,
+            )
             move_motors_to_home_and_close(motors)
 
         if mode == "both":

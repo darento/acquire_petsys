@@ -267,7 +267,7 @@ void processCommand(String command) {
     setNumMotores(motorNum); // In this case, motorNum corresponds to the number of motors to set 
   } else if (action == "STOP") {
     stopMotor(motorNum, false);
-  } else if (action == "MOVE") {
+  } else if (action == "MOVE") {  // Unused for now, prefer to use MOVETO
     processMoveCommand(command, motorNum, firstCommaIndex, false);
   } else if (action == "MOVETO") {
     processMoveCommand(command, motorNum, firstCommaIndex, true);
