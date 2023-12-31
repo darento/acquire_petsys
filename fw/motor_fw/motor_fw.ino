@@ -49,6 +49,9 @@ Estos son los pines para una Arduino MEGA 2560 y una Ramp 1.4
 //Los siguientes pines estan adaptados a una Arduino UNO r3 y una
 //CNC shield V3.0 con drivers DRV8825/A4988
 
+// TODO
+// - Add setSpeed and setAcc
+
 #include <AccelStepper.h>
 
 #define X_STEP_PIN      2
@@ -105,6 +108,27 @@ void setupMotor(AccelStepper& motor, int stepPin, int dirPin, int enablePin, int
   motor.setMaxSpeed(200);
   motor.setSpeed(200);
   motor.setAcceleration(50);
+}
+
+void setMotorParameter(String command, int motor, int firstCommaIndex, void (*setFunc)(AccelStepper&, int)) {
+  int secondCommaIndex = command.indexOf(',', firstCommaIndex + 1);
+  int value = command.substring(secondCommaIndex + 1).toInt();
+  if (motor == 1) setFunc(X, value);
+  if (motor == 2) setFunc(Y, value);
+  if (motor == 3) setFunc(Z, value);
+  Serial.println("F");
+}
+
+void setMotorMaxSpeed(String command, int motor, int firstCommaIndex) {
+  setMotorParameter(command, motor, firstCommaIndex, [](AccelStepper& motor, int maxSpeed) { motor.setMaxSpeed(maxSpeed); });
+}
+
+void setMotorSpeed(String command, int motor, int firstCommaIndex) {
+  setMotorParameter(command, motor, firstCommaIndex, [](AccelStepper& motor, int speed) { motor.setSpeed(speed); });
+}
+
+void setMotorAcceleration(String command, int motor, int firstCommaIndex) {
+  setMotorParameter(command, motor, firstCommaIndex, [](AccelStepper& motor, int acceleration) { motor.setAcceleration(acceleration); });
 }
 
 void setup() {
@@ -249,6 +273,12 @@ void processCommand(String command) {
     processMoveCommand(command, motorNum, firstCommaIndex, true);
   } else if (action == "SET_ZERO") {
     setCurrentPositionToZero(motorNum);
+  } else if (action == "SET_MAX_SPEED"){
+    setMotorMaxSpeed(command, motorNum, firstCommaIndex);
+  } else if (action == "SET_SPEED"){
+    setMotorSpeed(command, motorNum, firstCommaIndex);
+  } else if (action == "SET_ACCEL"){
+    setMotorAcceleration(command, motorNum, firstCommaIndex);
   } else if (action == "LED") {
     pingLED();
   }

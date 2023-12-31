@@ -21,14 +21,20 @@ class MotorControl:
                  motor_end: float, 
                  motor_step_size: float,
                  motor_name: str,
-                 motor_id: int) -> None:
+                 motor_id: int,
+                 motor_speed: int,
+                 motor_max_speed: int,
+                 motor_accel: float) -> None:
+        # Initialize logging
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
         """Initialize the serial connection to the motor."""
         print(f"Initializing motor '{motor_name}'...")
         self.initialize_serial(serial_port)
         self.configure_motor(motor_relation, motor_microstep, motor_start, motor_end, 
-                             motor_step_size, motor_name, motor_id)
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.DEBUG)
+                             motor_step_size, motor_name, motor_id, motor_speed, 
+                             motor_max_speed, motor_accel)
+        
 
     def initialize_serial(self, serial_port: str):
         """Initialize serial connection with robust error handling."""
@@ -46,7 +52,10 @@ class MotorControl:
                         motor_end: float,
                         motor_step_size: float,
                         motor_name: str,
-                        motor_id: int) -> None:
+                        motor_id: int,
+                        motor_speed: int,
+                        motor_max_speed: int,
+                        motor_accel: float) -> None:
         """Configure motor parameters and initialize position."""
         # Motor parameters for step-wise movement
         self.motor_relation = motor_relation
@@ -59,6 +68,9 @@ class MotorControl:
         self.steps_moved = 0
         self.motor_name = motor_name
         self.motor_id = motor_id
+        self.set_speed(motor_speed)
+        self.set_max_speed(motor_max_speed)
+        self.set_acceleration(motor_accel)        
     
     def __read_until(self, end_signal: bytes) -> bytes:
         """Read from the serial connection until the end signal is reached."""
@@ -87,47 +99,55 @@ class MotorControl:
             self.logger.error(f"Failed to send command: {e}")
             raise
 
-    def format_command(self, *args) -> bytes:
+    def _format_command(self, *args) -> bytes:
         """Format a command to send to the motor."""
         return ','.join(str(arg) for arg in args).encode() 
 
     def connection_motor(self) -> None:
         """Connect to the motor."""
-        command = self.format_command("CON")
+        command = self._format_command("CON")
+        self.__write_command(command)
+
+    def set_num_motors(self, num_motors: int) -> None:
+        """Set the number of motors."""
+        command =  self._format_command("SETMOTORS", num_motors) 
         self.__write_command(command)
     
+    def set_speed(self, speed: int) -> None:
+        """Set the speed."""
+        command = self._format_command("SET_SPEED", self.motor_id, speed)
+        self.__write_command(command)
+        
+    def set_max_speed(self, max_speed: int) -> None:
+        """Set the maximum speed."""
+        command = self._format_command("SET_MAX_SPEED", self.motor_id, max_speed)
+        self.__write_command(command)
+        
+    def set_acceleration(self, acceleration: int) -> None:
+        """Set the acceleration."""
+        command = self._format_command("SET_ACCEL", self.motor_id, acceleration)
+        self.__write_command(command)
+
     def move_motor(self, direction: int, steps: int) -> None:
         """Send move command to the specified motor."""
-        command = self.format_command("MOVE", self.motor_id, direction, steps)
+        command = self._format_command("MOVE", self.motor_id, direction, steps)
         self.__write_command(command)
         
     def move_motor_to(self, position: int) -> None:
         """Send move command to the specified motor."""
-        command = self.format_command("MOVETO", self.motor_id, position)
+        command = self._format_command("MOVETO", self.motor_id, position)
         self.__write_command(command)
-        self.current_position_mm = position * self.motor_relation / STEPS_PER_REV / self.motor_microstep
-
-    def set_num_motors(self, num_motors: int) -> None:
-        """Set the number of motors."""
-        command =  self.format_command("SETMOTORS", num_motors) 
-        self.__write_command(command)
+        self.current_position_mm = position * self.motor_relation / STEPS_PER_REV / self.motor_microstep    
 
     def stop_motor(self) -> None:
         """Send stop command to a specified motor."""
-        command = self.format_command("STOP", self.motor_id)  
+        command = self._format_command("STOP", self.motor_id)  
         self.__write_command(command)
     
     def pingLED(self) -> None:
         """Send a ping to the LED."""
-        command = self.format_command("LED")  
-        self.__write_command(command)
-
-    def close(self) -> None:
-        """Close the serial connection."""
-        try:
-            self.ser.close()
-        except serial.SerialException as e:
-            print(f"Failed to close serial port: {e}")
+        command = self._format_command("LED")  
+        self.__write_command(command)    
 
     def read(self) -> str:
         """Read a line from the serial connection."""
@@ -138,21 +158,19 @@ class MotorControl:
 
     def find_home(self) -> None:
         """Find the home position."""
-        command = self.format_command("MOVE", self.motor_id, -1, 1000000) # Move motor to the home position
+        command = self._format_command("MOVE", self.motor_id, -1, 1000000) # Move motor to the home position
         print(f"Searching for motor to HOME position...")
         self.__write_command(command)
         self.current_position_mm = 0.0
         self.steps_moved = 0  # Reset step count after moving to home position
         
         # Send the SET_ZERO command to set absolute position to 0
-        command = self.format_command("SET_ZERO", self.motor_id)
+        command = self._format_command("SET_ZERO", self.motor_id)
         self.__write_command(command)
 
     def move_to_home(self) -> None:
         """Move motor to the home position."""
-        print(f"Moving motor to HOME position...")
-        print(f"Current position: {self.current_position_mm}mm")
-        print(-self.mm_to_steps(self.current_position_mm))
+        print(f"Moving motor to HOME position...")       
         self.move_motor_to(0)
         self.steps_moved = 0  # Reset step count after moving to home position
         self.current_position_mm = 0.0
@@ -192,7 +210,14 @@ class MotorControl:
     def array_of_positions(self) -> np.array:
         """Create an array of absolute positions."""
         positions_mm = np.arange(self.motor_start, self.motor_end + self.motor_step_size, self.motor_step_size)
-        return positions_mm           
+        return positions_mm    
+    
+    def close(self) -> None:
+        """Close the serial connection."""
+        try:
+            self.ser.close()
+        except serial.SerialException as e:
+            print(f"Failed to close serial port: {e}")       
         
 def serial_ports() -> str:
     """Lists serial port names.
@@ -238,11 +263,12 @@ if __name__ == "__main__":
         print("No motor port found")
         sys.exit(1)
 
-    motor = MotorControl(motor_port, 0.5, 1, 3.0, 1.0, -0.25, "motorX", 1)
+    motor = MotorControl(motor_port, 1, 1, 3.0, 1.0, -0.25, "motorX", 1, 200, 200, 50)
     
     
     # Create an array of absolute positions
     positions_mm = np.arange(motor.motor_start, motor.motor_end + motor.motor_step_size, motor.motor_step_size)
+
     
     # Move the motor to each position
     for position_mm in [1.1, 0.5, 2.3, 4.5]:
