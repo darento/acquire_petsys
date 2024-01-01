@@ -80,24 +80,12 @@ def acquire_data_scan(
     disc_settings: DiscSettings,
     yaml_dict: Dict[str, Any],
     log_file: str,
-    iterations: int,
-    voltages: list,
-    time_T1: list,
-    time_T2: list,
-    time_E: list,
+    iterables: List[int],
     motors: List[MotorControl] = None,
     step=-1,
 ) -> None:
     # Initialize a list to store the time each iteration takes
     iteration_times = []
-
-    # Total number of iterations
-    total_iterations = (
-        len(time_E) * len(time_T2) * len(time_T1) * len(voltages) * iterations
-    )
-
-    # Create a list of iterables to iterate over
-    iterables = [range(iterations), voltages, time_T1, time_T2, time_E]
 
     # Iterate over all the possible combinations of the iterables
     for it, v, t1, t2, e in product(*iterables):
@@ -166,17 +154,13 @@ def move_motors_to_home_and_close(motors: List[MotorControl]) -> None:
         motor.close()
 
 
-def move_motors_step_by_step_and_acquire_data(
+def move_motors_and_acquire_data(
     motors: List[MotorControl],
     bias_settings: BiasSettings,
     disc_settings: DiscSettings,
     yaml_dict: Dict[str, Any],
     log_file: str,
-    iterations: int,
-    voltages: list,
-    time_T1: list,
-    time_T2: list,
-    time_E: list,
+    iterables: List[int],
 ) -> None:
     # Open the log file and write the header
     with open(log_file, "a") as f:
@@ -200,11 +184,7 @@ def move_motors_step_by_step_and_acquire_data(
             disc_settings,
             yaml_dict,
             log_file,
-            iterations,
-            voltages,
-            time_T1,
-            time_T2,
-            time_E,
+            iterables,
             motors,
             step=it,
         )
@@ -234,11 +214,22 @@ if __name__ == "__main__":
     disc_settings.set_fixedthresholds()
 
     petsys_commands = Commands(yaml_dict)
+
+    # get the iterables
     voltages = yaml_dict["over_voltage"]
     time_T1 = yaml_dict["vth_t1"]
     time_T2 = yaml_dict["vth_t2"]
     time_E = yaml_dict["vth_e"]
     iterations = yaml_dict["iterations"]
+
+    # Total number of iterations
+    total_iterations = (
+        len(time_E) * len(time_T2) * len(time_T1) * len(voltages) * iterations
+    )
+
+    # Create a list of iterables to iterate over
+    iterables = [range(iterations), voltages, time_T1, time_T2, time_E]
+
     log_file = os.path.join(yaml_dict["out_directory"], yaml_dict["out_name"] + ".log")
 
     # change to the petsys directory to run the acquire_sipm_data command or process files
@@ -255,15 +246,7 @@ if __name__ == "__main__":
                 f.write("file_name" + "\n")
             # Run the acquire_data function
             acquire_data_scan(
-                bias_settings,
-                disc_settings,
-                yaml_dict,
-                log_file,
-                iterations,
-                voltages,
-                time_T1,
-                time_T2,
-                time_E,
+                bias_settings, disc_settings, yaml_dict, log_file, iterables
             )
         else:
             # Find the motor port
@@ -294,17 +277,8 @@ if __name__ == "__main__":
                 motors.append(motor)
             for motor in motors:
                 motor.find_home()
-            move_motors_step_by_step_and_acquire_data(
-                motors,
-                bias_settings,
-                disc_settings,
-                yaml_dict,
-                log_file,
-                iterations,
-                voltages,
-                time_T1,
-                time_T2,
-                time_E,
+            move_motors_and_acquire_data(
+                motors, bias_settings, disc_settings, yaml_dict, log_file, iterables
             )
             move_motors_to_home_and_close(motors)
 
