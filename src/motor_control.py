@@ -181,6 +181,7 @@ class MotorControl:
         # Send the SET_ZERO command to set absolute position to 0
         command = self._format_command("SET_ZERO", self.motor_id)
         self.__write_command(command)
+        print(f"Motor moved to HOME position.")
 
     def move_to_home(self) -> None:
         """Move motor to the home position."""

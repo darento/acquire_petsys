@@ -4,6 +4,7 @@ YML_FILENAME=${CONDA_ENV_NAME}.yml
 
 function activate_and_compile {
     conda activate ${CONDA_ENV_NAME}
+    python setup.py develop
 }
 
 function make_conda_env {

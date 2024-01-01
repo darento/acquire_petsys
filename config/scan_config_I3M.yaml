@@ -54,13 +54,13 @@ break_voltage: 50.0
 over_voltage: [4.2]
 
 #T1 threshold list
-vth_t1: [12]
+vth_t1: [15]
 
 #T2 threshold list
-vth_t2: [21]
+vth_t2: [17]
 
 #E threshold list
-vth_e: [10]
+vth_e: [1]
 
 # Number of iterations of the whole scan
 iterations: 1
@@ -81,7 +81,10 @@ motorX:
   end: 2.0
   step_size: 0.25 
   microstep: 1
-  relation: 0.5
+  relation: 1.0
+  speed: 100
+  max_speed: 100
+  acceleration: 20
   
 motorY:
   type: linear
@@ -90,6 +93,9 @@ motorY:
   step_size: 0.2
   microstep: 1
   relation: 0.5
+  speed: 200
+  max_speed: 200
+  acceleration: 50
 
 motorZ:
   type: linear
@@ -98,6 +104,9 @@ motorZ:
   step_size: 0.2
   microstep: 1
   relation: 0.5
+  speed: 200
+  max_speed: 200
+  acceleration: 50
 
 
 
