@@ -12,7 +12,6 @@ Options:
 
 from docopt import docopt
 import yaml
-import sys
 from src.config import validate_yaml_dict
 
 from src.motor_control import MotorControl
@@ -32,7 +31,7 @@ if __name__ == "__main__":
 
     if motor_port is None:
         print("No motor port found")
-        sys.exit(1)
+        raise SystemExit
 
     # Create a MotorControl instance for each motor
     motors = []
