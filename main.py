@@ -18,13 +18,12 @@ import yaml
 import pandas as pd
 from typing import Dict, Any, List
 import os
-import sys
 from itertools import product
 
 from src.settings import BiasSettings
 from src.settings import DiscSettings
 from src.settings import Commands
-from src.config import get_ref_params
+from src.config import MotorConfig, ScanConfig, get_ref_params
 from src.config import validate_yaml_dict
 from src.utils import estimate_remaining_time
 from src.motor_control import MotorControl
@@ -76,19 +75,14 @@ def process_files(petsys_commands: Commands, file_path: str) -> None:
 
 
 def acquire_data_scan(
-    bias_settings: BiasSettings,
-    disc_settings: DiscSettings,
-    yaml_dict: Dict[str, Any],
-    log_file: str,
-    iterables: List[int],
-    motors: List[MotorControl] = None,
+    config: ScanConfig,
     step=-1,
 ) -> None:
     # Initialize a list to store the time each iteration takes
     iteration_times = []
 
     # Iterate over all the possible combinations of the iterables
-    for it, v, t1, t2, e in product(*iterables):
+    for it, v, t1, t2, e in product(*config.iterables):
         # Record the start time of the iteration
         start_time = time.time()
 
@@ -108,16 +102,16 @@ def acquire_data_scan(
         # Check if the motor is present
         if step >= 0:
             # Include the motor position in the file name
-            full_out_name = yaml_dict[
+            full_out_name = config.yaml_dict[
                 "out_name"
             ] + "_pos{}_it{}_{}OV_{}T1_{}T2_{}E".format(step, it, v_bias, t1, t2, e)
         else:
             # Don't include the motor position in the file name
-            full_out_name = yaml_dict["out_name"] + "_it{}_{}OV_{}T1_{}T2_{}E".format(
-                it, v_bias, t1, t2, e
-            )
+            full_out_name = config.yaml_dict[
+                "out_name"
+            ] + "_it{}_{}OV_{}T1_{}T2_{}E".format(it, v_bias, t1, t2, e)
 
-        file_dir = yaml_dict["out_directory"] + full_out_name
+        file_dir = config.yaml_dict["out_directory"] + full_out_name
         petsys_commands.acquire_data(full_out_name)
 
         print("------------------------------------------")
@@ -128,7 +122,7 @@ def acquire_data_scan(
                 f.write(
                     file_dir
                     + "\t"
-                    + "\t".join(str(m.current_position_mm) for m in motors)
+                    + "\t".join(str(m.current_position_mm) for m in config.motors)
                     + "\n"
                 )
             else:
@@ -155,12 +149,7 @@ def move_motors_to_home_and_close(motors: List[MotorControl]) -> None:
 
 
 def move_motors_and_acquire_data(
-    motors: List[MotorControl],
-    bias_settings: BiasSettings,
-    disc_settings: DiscSettings,
-    yaml_dict: Dict[str, Any],
-    log_file: str,
-    iterables: List[int],
+    config: ScanConfig,
 ) -> None:
     # Open the log file and write the header
     with open(log_file, "a") as f:
@@ -176,16 +165,11 @@ def move_motors_and_acquire_data(
 
     # Iterate over all the possible combinations of the iterables
     for it, positions in enumerate(position_matrix):
-        for motor, position in zip(motors, positions):
+        for motor, position in zip(config.motors, positions):
             motor.move_motor_to(motor.mm_to_steps(position))
             print_motor_position(motor)
         acquire_data_scan(
-            bias_settings,
-            disc_settings,
-            yaml_dict,
-            log_file,
-            iterables,
-            motors,
+            config,
             step=it,
         )
 
@@ -245,41 +229,30 @@ if __name__ == "__main__":
             with open(log_file, "a") as f:
                 f.write("file_name" + "\n")
             # Run the acquire_data function
-            acquire_data_scan(
+            no_motor_scan_conf = ScanConfig(
                 bias_settings, disc_settings, yaml_dict, log_file, iterables
             )
+            acquire_data_scan(no_motor_scan_conf)
         else:
             # Find the motor port
             motor_port = serial_ports()
 
             if motor_port is None:
                 print("No motor port found")
-                sys.exit(1)
-
+                raise SystemExit
             # Create a MotorControl instance for each motor
             motors = []
             for i in range(yaml_dict["num_motors"]):
                 motor_name = f"motor{chr(88 + i)}"  # 88 is ASCII for 'X'
-                motor_config = yaml_dict[motor_name]
-                motor = MotorControl(
-                    motor_port,
-                    motor_config["relation"],
-                    motor_config["microstep"],
-                    motor_config["start"],
-                    motor_config["end"],
-                    motor_config["step_size"],
-                    motor_name,
-                    i + 1,
-                    motor_config["speed"],
-                    motor_config["max_speed"],
-                    motor_config["acceleration"],
-                )
+                motor_config = MotorConfig(yaml_dict[motor_name])
+                motor = MotorControl(motor_port, motor_config, motor_name, i + 1)
                 motors.append(motor)
             for motor in motors:
                 motor.find_home()
-            move_motors_and_acquire_data(
-                motors, bias_settings, disc_settings, yaml_dict, log_file, iterables
+            motor_scan_conf = ScanConfig(
+                bias_settings, disc_settings, yaml_dict, log_file, iterables, motors
             )
+            move_motors_and_acquire_data(motor_scan_conf)
             move_motors_to_home_and_close(motors)
 
         if mode == "both":

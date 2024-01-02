@@ -1,6 +1,38 @@
 from typing import Dict, Any, Tuple
+
+from src.settings import BiasSettings, DiscSettings
 from .reader import read_bias_map
 import os
+
+
+class MotorConfig:
+    def __init__(self, config: Dict[str, Any]) -> None:
+        self.relation = config["relation"]
+        self.microstep = config["microstep"]
+        self.start = config["start"]
+        self.end = config["end"]
+        self.step_size = config["step_size"]
+        self.speed = config["speed"]
+        self.max_speed = config["max_speed"]
+        self.acceleration = config["acceleration"]
+
+
+class ScanConfig:
+    def __init__(
+        self,
+        bias_settings: BiasSettings,
+        disc_settings: DiscSettings,
+        yaml_dict: Dict[str, Any],
+        log_file: str,
+        iterables: list,
+        motors: list = None,
+    ) -> None:
+        self.bias_settings = bias_settings
+        self.disc_settings = disc_settings
+        self.yaml_dict = yaml_dict
+        self.log_file = log_file
+        self.iterables = iterables
+        self.motors = motors
 
 
 def get_ref_params(yaml_dict: Dict[str, Any]) -> Tuple[list, list]:

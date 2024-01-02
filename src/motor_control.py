@@ -5,6 +5,8 @@ import numpy as np
 import logging
 import time
 
+from src.config import MotorConfig
+
 # Constants
 STEPS_PER_REV = 200  # for a 1.8° stepper motor
 BAUDRATE = 9600
@@ -18,16 +20,9 @@ class MotorControl:
     def __init__(
         self,
         serial_port: str,
-        motor_relation: float,
-        motor_microstep: int,
-        motor_start: float,
-        motor_end: float,
-        motor_step_size: float,
+        motor_config: MotorConfig,
         motor_name: str,
         motor_id: int,
-        motor_speed: int,
-        motor_max_speed: int,
-        motor_accel: float,
     ) -> None:
         # Initialize logging
         self.logger = logging.getLogger(__name__)
@@ -36,16 +31,9 @@ class MotorControl:
         print(f"Initializing motor '{motor_name}'...")
         self.initialize_serial(serial_port)
         self.configure_motor(
-            motor_relation,
-            motor_microstep,
-            motor_start,
-            motor_end,
-            motor_step_size,
+            motor_config,
             motor_name,
             motor_id,
-            motor_speed,
-            motor_max_speed,
-            motor_accel,
         )
 
     def initialize_serial(self, serial_port: str):
@@ -62,32 +50,27 @@ class MotorControl:
 
     def configure_motor(
         self,
-        motor_relation: float,
-        motor_microstep: int,
-        motor_start: float,
-        motor_end: float,
-        motor_step_size: float,
+        motor_config: MotorConfig,
         motor_name: str,
         motor_id: int,
-        motor_speed: int,
-        motor_max_speed: int,
-        motor_accel: float,
     ) -> None:
         """Configure motor parameters and initialize position."""
         # Motor parameters for step-wise movement
-        self.motor_relation = motor_relation
-        self.motor_microstep = motor_microstep  # 1 for full step, 2 for half step, etc.
-        self.motor_start = motor_start
-        self.motor_end = motor_end
-        self.motor_step_size = motor_step_size
+        self.motor_relation = motor_config.relation
+        self.motor_microstep = (
+            motor_config.microstep
+        )  # 1 for full step, 2 for half step, etc.
+        self.motor_start = motor_config.start
+        self.motor_end = motor_config.end
+        self.motor_step_size = motor_config.step_size
         self.current_position_mm = self.motor_start  # Initialize at start position
         self.total_steps_required = 0
         self.steps_moved = 0
         self.motor_name = motor_name
         self.motor_id = motor_id
-        self.set_speed(motor_speed)
-        self.set_max_speed(motor_max_speed)
-        self.set_acceleration(motor_accel)
+        self.set_speed(motor_config.speed)
+        self.set_max_speed(motor_config.speed)
+        self.set_acceleration(motor_config.acceleration)
 
     def __read_until(self, end_signal: bytes) -> bytes:
         """Read from the serial connection until the end signal is reached."""
