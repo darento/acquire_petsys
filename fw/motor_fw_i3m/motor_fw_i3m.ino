@@ -13,6 +13,7 @@ Programa adaptado para el uso de Ramps 1.4 y drivers DRV8825/A4988
  * 
 
 Estos son los pines para una Arduino MEGA 2560 y una Ramp 1.4 
+*/
 #define X_STEP_PIN      54
 #define X_DIR_PIN       55
 #define X_ENABLE_PIN    38
@@ -35,51 +36,9 @@ Estos son los pines para una Arduino MEGA 2560 y una Ramp 1.4
 #define E_DIR_PIN       28
 #define E_ENABLE_PIN    24
 
-
 #define Q_STEP_PIN      36
 #define Q_DIR_PIN       34
 #define Q_ENABLE_PIN    30
-
-
-#define LED_PIN         13
-#define FAN_PIN         9
-#define TRIGGER         45
-*/
-
-//Los siguientes pines estan adaptados a una Arduino UNO r3 y una
-//CNC shield V3.0 con drivers DRV8825/A4988
-
-// TODO
-// - Add setSpeed and setAcc
-
-#include <AccelStepper.h>
-
-#define X_STEP_PIN      2
-#define X_DIR_PIN       5
-#define X_ENABLE_PIN    8
-#define X_MIN_PIN       9
-#define X_MAX_PIN       10
-
-#define Y_STEP_PIN      3
-#define Y_DIR_PIN       6
-#define Y_ENABLE_PIN    8
-#define Y_MIN_PIN       11
-#define Y_MAX_PIN       12
-
-#define Z_STEP_PIN      4
-#define Z_DIR_PIN       7
-#define Z_ENABLE_PIN    8
-#define Z_MIN_PIN       A0
-#define Z_MAX_PIN       A1
-
-#define E_STEP_PIN      12
-#define E_DIR_PIN       13
-#define E_ENABLE_PIN    8
-
-#define Q_STEP_PIN      36
-#define Q_DIR_PIN       34
-#define Q_ENABLE_PIN    30
-
 
 #define LED_PIN         13
 
