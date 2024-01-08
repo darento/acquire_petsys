@@ -245,7 +245,9 @@ if __name__ == "__main__":
             for i in range(yaml_dict["num_motors"]):
                 motor_name = f"motor{chr(88 + i)}"  # 88 is ASCII for 'X'
                 motor_config = MotorConfig(yaml_dict[motor_name])
-                motor = MotorControl(motor_port, motor_config, motor_name, i + 1)
+                motor = MotorControl(
+                    motor_port, motor_config, motor_name=motor_name, motor_id=i + 1
+                )
                 motors.append(motor)
             for motor in motors:
                 motor.find_home()
