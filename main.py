@@ -27,7 +27,7 @@ from src.config import MotorConfig, ScanConfig, get_ref_params
 from src.config import validate_yaml_dict
 from src.utils import estimate_remaining_time
 from src.motor_control import MotorControl
-from src.motor_control import serial_ports
+from src.motor_control import find_serial_port
 
 
 def confirm_file_deletion(file_path: str) -> None:
@@ -234,19 +234,16 @@ if __name__ == "__main__":
             )
             acquire_data_scan(no_motor_scan_conf)
         else:
-            # Find the motor port
-            motor_port = serial_ports()
+            # Find the motors port
+            motors_serial = find_serial_port()
 
-            if motor_port is None:
-                print("No motor port found")
-                raise SystemExit
             # Create a MotorControl instance for each motor
             motors = []
             for i in range(yaml_dict["num_motors"]):
                 motor_name = f"motor{chr(88 + i)}"  # 88 is ASCII for 'X'
                 motor_config = MotorConfig(yaml_dict[motor_name])
                 motor = MotorControl(
-                    motor_port, motor_config, motor_name=motor_name, motor_id=i + 1
+                    motors_serial, motor_config, motor_name=motor_name, motor_id=i + 1
                 )
                 motors.append(motor)
             for motor in motors:

@@ -84,7 +84,7 @@ motorX:
   relation: 1.5
   speed: 4000
   max_speed: 4000
-  acceleration: 400
+  acceleration: 800
   
 motorY:
   type: linear

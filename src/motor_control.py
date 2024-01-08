@@ -19,7 +19,7 @@ class MotorControl:
 
     def __init__(
         self,
-        serial_port: str,
+        serial: serial.Serial,
         motor_config: MotorConfig,
         motor_name: str,
         motor_id: int,
@@ -29,24 +29,10 @@ class MotorControl:
         self.logger.setLevel(logging.DEBUG)
         """Initialize the serial connection to the motor."""
         print(f"Initializing motor '{motor_name}'...")
-        self.initialize_serial(serial_port)
-        self.configure_motor(
-            motor_config,
-            motor_name,
-            motor_id,
-        )
-
-    def initialize_serial(self, serial_port: str):
-        """Initialize serial connection with robust error handling."""
-        try:
-            self.ser = serial.Serial(
-                port=serial_port, baudrate=BAUDRATE, timeout=TIMEOUT
-            )
-            self.ser.rts = True
-            self.__read_until(b"<>\n")
-        except serial.SerialException as e:
-            print(f"Failed to open serial port: {e}")
-            sys.exit(1)  # Exit if serial connection fails
+        self.ser = serial
+        self.configure_motor(motor_config, motor_name, motor_id)
+        self.connection_motor()
+        print(f"Motor '{motor_name}' initialized.")
 
     def configure_motor(
         self,
@@ -71,14 +57,6 @@ class MotorControl:
         self.set_speed(motor_config.speed)
         self.set_max_speed(motor_config.speed)
         self.set_acceleration(motor_config.acceleration)
-
-    def __read_until(self, end_signal: bytes) -> bytes:
-        """Read from the serial connection until the end signal is reached."""
-        try:
-            return self.ser.read_until(end_signal)
-        except serial.SerialException as e:
-            self.logger.error(f"Failed to read from serial port: {e}")
-            raise
 
     def __write_command(self, command: bytes) -> None:
         """Write a command to the serial port and wait for an 'F' response."""
@@ -106,11 +84,6 @@ class MotorControl:
     def connection_motor(self) -> None:
         """Connect to the motor."""
         command = self._format_command("CON")
-        self.__write_command(command)
-
-    def set_num_motors(self, num_motors: int) -> None:
-        """Set the number of motors."""
-        command = self._format_command("SETMOTORS", num_motors)
         self.__write_command(command)
 
     def set_speed(self, speed: int) -> None:
@@ -197,11 +170,12 @@ class MotorControl:
             print(f"Failed to close serial port: {e}")
 
 
-def serial_ports() -> str:
-    """Lists serial port names.
+def find_serial_port() -> serial.Serial:
+    """Find the motor serial connection and return it.
 
     :raises EnvironmentError: On unsupported or unknown platforms
-    :returns: A list of the serial ports available on the system
+    :returns: a serial.Serial object with the motor connection open and ready
+    to use for communication
     """
     logger = logging.getLogger(__name__)
     logger.info("Searching for motor port...")
@@ -216,35 +190,30 @@ def serial_ports() -> str:
 
     for port in ports:
         try:
-            with serial.Serial(
-                port, baudrate=BAUDRATE, timeout=TIMEOUT
-            ) as ser:  # Use 'with' to ensure the port is closed
-                ser.rts = True
-                start_signal = "<>".encode()
-                ser.read_until(start_signal)
-                try:
-                    ser.write(b"CON\n")
-                    com_response = ser.readline().strip().decode("utf-8")
-                    if com_response == "MOTORUP":
-                        logger.info(f"Motor found on port {port}")
-                        return port
-                except UnicodeDecodeError as e:
-                    logger.error(f"UnicodeDecodeError on port {port}: {e}")
+            ser = serial.Serial(port, baudrate=BAUDRATE, timeout=TIMEOUT)
+            ser.rts = True
+            start_signal = "<>".encode()
+            ser.read_until(start_signal)
+            try:
+                ser.write(b"CON\n")
+                com_response = ser.readline().strip().decode("utf-8")
+                if com_response == "MOTORUP":
+                    logger.info(f"Motor found on port {port}")
+                    return ser
+            except UnicodeDecodeError as e:
+                logger.error(f"UnicodeDecodeError on port {port}: {e}")
+                ser.close()  # Close the port in case of an error
         except (OSError, serial.SerialException) as e:
             logger.debug(f"Failed to connect to port {port}: {e}")
-    logger.warning("No motor port found")
-    return None
+    logger.warning("No motor port found. \nPlease connect the motor and try again.")
+    sys.exit(1)  # Exit if serial connection fails
 
 
 if __name__ == "__main__":
     # Find the motor port
-    motor_port = serial_ports()
+    motor_ser = find_serial_port()
 
-    if motor_port is None:
-        print("No motor port found")
-        sys.exit(1)
-
-    motor = MotorControl(motor_port, 1, 1, 3.0, 1.0, -0.25, "motorX", 1, 200, 200, 50)
+    motor = MotorControl(motor_ser, 1, 1, 3.0, 1.0, -0.25, "motorX", 1, 200, 200, 50)
 
     # Create an array of absolute positions
     positions_mm = np.arange(
