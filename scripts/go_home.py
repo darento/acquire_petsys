@@ -15,7 +15,7 @@ import yaml
 from src.config import MotorConfig, validate_yaml_dict
 
 from src.motor_control import MotorControl
-from src.motor_control import serial_ports
+from src.motor_control import find_serial_port
 
 if __name__ == "__main__":
     args = docopt(__doc__)
@@ -27,18 +27,14 @@ if __name__ == "__main__":
     validate_yaml_dict(yaml_dict)
 
     # Find the motor port
-    motor_port = serial_ports()
-
-    if motor_port is None:
-        print("No motor port found")
-        raise SystemExit
+    motors_serial = find_serial_port()
 
     # Create a MotorControl instance for each motor
     motors = []
     for i in range(yaml_dict["num_motors"]):
         motor_name = f"motor{chr(88 + i)}"  # 88 is ASCII for 'X'
         motor_config = MotorConfig(yaml_dict[motor_name])
-        motor = MotorControl(motor_port, motor_config, motor_name, i + 1)
+        motor = MotorControl(motors_serial, motor_config, motor_name, i + 1)
         motors.append(motor)
     for motor in motors:
         motor.find_home()

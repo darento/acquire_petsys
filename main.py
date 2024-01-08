@@ -151,7 +151,7 @@ def move_motors_to_home_and_close(motors: List[MotorControl]) -> None:
 def move_motors_and_acquire_data(
     config: ScanConfig,
 ) -> None:
-    # Open the log file and write the header
+    # Open the log file and write the header with the motor names and the milimeters
     with open(log_file, "a") as f:
         f.write(
             "file_name"
