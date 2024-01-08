@@ -16,21 +16,21 @@ To install the necessary dependencies, you can use the provided `env_PETsys.yml`
 conda env create -f env_PETsys.yml
 ```
 
-Usage
+## Usage
 To run the main script, use the following command:
 
 ```bash
 python Usage: main.py YAMLCONF [-m MODE]
 ```
 
-Motor Firmware
+## Motor Firmware
 The fw/ directory contains firmware for the motor control. There are separate versions for Arduino Uno R3 and I3M.
 
-Scripts
+## Scripts
 The scripts/ directory contains additional scripts, such as go_home.py.
 
-Source Code
+## Source Code
 The src/ directory contains the source code for the module. This includes scripts for configuration, motor control, reading data, settings, and utilities.
 
-Test Data
+## Test Data
 The test_data/ directory contains log files and other data for testing purposes.
