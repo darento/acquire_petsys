@@ -1,12 +1,12 @@
 #config.ini file directory
-config_directory: "C:/Users/david/Desktop/Python/PETsyScan/test_data/FEM128/"
+config_directory: "C:/Users/David/Desktop/Python/PETsyScan/test_data/FEM128/"
 
 #PETsys binaries directory 
-petsys_directory: "C:/Users/david/Desktop/Python/PETsys_sw_fake/"
+petsys_directory: "C:/Users/David/Desktop/Python/PETsys_sw_fake/"
 
 #output base name and directory
-out_name: "20231226_NAVIDAD"
-out_directory: "C:/Users/david/Desktop/Python/PETsyScan/test_data/"
+out_name: "20230108_PRIMERTEST"
+out_directory: "C:/Users/David/Desktop/Python/PETsyScan/test_data/"
 
 #FEM being used (FEM128/FEM256)
 FEM: "FEM128"
@@ -80,11 +80,11 @@ motorX:
   start: 1.0
   end: 2.0
   step_size: 0.25 
-  microstep: 1
-  relation: 1.0
-  speed: 100
-  max_speed: 100
-  acceleration: 20
+  microstep: 16
+  relation: 1.5
+  speed: 4000
+  max_speed: 4000
+  acceleration: 400
   
 motorY:
   type: linear

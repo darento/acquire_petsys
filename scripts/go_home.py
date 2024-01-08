@@ -12,7 +12,7 @@ Options:
 
 from docopt import docopt
 import yaml
-from src.config import validate_yaml_dict
+from src.config import MotorConfig, validate_yaml_dict
 
 from src.motor_control import MotorControl
 from src.motor_control import serial_ports
@@ -37,20 +37,8 @@ if __name__ == "__main__":
     motors = []
     for i in range(yaml_dict["num_motors"]):
         motor_name = f"motor{chr(88 + i)}"  # 88 is ASCII for 'X'
-        motor_config = yaml_dict[motor_name]
-        motor = MotorControl(
-            motor_port,
-            motor_config["relation"],
-            motor_config["microstep"],
-            motor_config["start"],
-            motor_config["end"],
-            motor_config["step_size"],
-            motor_name,
-            i + 1,
-            motor_config["speed"],
-            motor_config["max_speed"],
-            motor_config["acceleration"],
-        )
+        motor_config = MotorConfig(yaml_dict[motor_name])
+        motor = MotorControl(motor_port, motor_config, motor_name, i + 1)
         motors.append(motor)
     for motor in motors:
         motor.find_home()

@@ -14,6 +14,8 @@ Programa adaptado para el uso de Ramps 1.4 y drivers DRV8825/A4988
 
 Estos son los pines para una Arduino MEGA 2560 y una Ramp 1.4 
 */
+#include <AccelStepper.h>
+
 #define X_STEP_PIN      54
 #define X_DIR_PIN       55
 #define X_ENABLE_PIN    38
@@ -43,9 +45,6 @@ Estos son los pines para una Arduino MEGA 2560 y una Ramp 1.4
 #define LED_PIN         13
 
 #define motorInterfaceType 1 //Debe ser 1 si se usan drivers
-#define VUELTAS         200
-//#define TRIGGERDELAY    1000
-
 
 #define MAX_MOTORES 3
 
@@ -64,9 +63,9 @@ void setupMotor(AccelStepper& motor, int stepPin, int dirPin, int enablePin, int
   pinMode(minPin, INPUT_PULLUP);
   pinMode(maxPin, INPUT_PULLUP);
   digitalWrite(enablePin, LOW);
-  motor.setMaxSpeed(200);
-  motor.setSpeed(200);
-  motor.setAcceleration(50);
+  motor.setMaxSpeed(2000);
+  motor.setSpeed(2000);
+  motor.setAcceleration(200);
 }
 
 void setMotorParameter(String command, int motor, int firstCommaIndex, void (*setFunc)(AccelStepper&, int)) {
@@ -132,19 +131,23 @@ void processMoveCommand(String command, int motorNum, int firstCommaIndex, bool 
 }
 
 void moveMotor(int motor, int dir, long distance, bool isAbsolute) {
+  // Activates and deactivates the motor when there is no movement to avoid overheating
   if (motor == 1) {
+    X.enableOutputs();
     if (isAbsolute) {
       X.moveTo(distance);
     } else {
       X.move(dir * distance);
     }
   } else if (motor == 2) {
+    Y.enableOutputs();
     if (isAbsolute) {
       Y.moveTo(distance);
     } else {
       Y.move(dir * distance);
     }
   } else if (motor == 3) {
+    Z.enableOutputs();
     if (isAbsolute) {
       Z.moveTo(distance);
     } else {
@@ -161,15 +164,20 @@ void moveMotor(int motor, int dir, long distance, bool isAbsolute) {
     if (motor == 2) Y.run();
     if (motor == 3) Z.run();
   }
+
+  if (motor == 1) X.disableOutputs();
+  if (motor == 2) Y.disableOutputs();
+  if (motor == 3) Z.disableOutputs();
+
   Serial.println("F");
 }
 
 void checkEndstopAndStopMotor(int motor, int dir, int minPin, int maxPin, bool& endstopHit, AccelStepper& stepper) {
   if (digitalRead(minPin) == LOW || digitalRead(maxPin) == LOW) {
     if (!endstopHit) {
-      stopMotor(motor, true);
-      stepper.move(-dir * 100); // Move a small amount in the opposite direction
       endstopHit = true;
+      stopMotor(motor, true);
+      stepper.move(-dir * 3600); // Move a small amount in the opposite direction      
     }
   } else {
     endstopHit = false;
