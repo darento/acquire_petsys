@@ -48,7 +48,7 @@ def confirm_file_deletion(file_path: str) -> None:
 def process_files(petsys_commands: Commands, file_path: str) -> None:
     with open(file_path, "r") as f:
         next(f)  # Skip the header
-        file_names = [line.split("\t")[0] for line in f]
+        file_names = [line.split("\t")[0].strip() for line in f]
     # initialize a list to store the time each iteration takes
     iteration_times = []
     # total number of iterations
