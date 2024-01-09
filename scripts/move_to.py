@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 """Move the motor to the home position. Reverse the direction of the motor if it is not moving in the right direction. 
-Usage: move_to.py YAMLCONF motor_name position_mm
+Usage: move_to.py YAMLCONF motor_name position_mm direction
 
 Arguments:
     YAMLCONF     File with all parameters to take into account in the scan.
     motor_name   Name of the motor to move.
     position_mm  Position in mm to move the motor to.
+    direction    Direction of the motor. Must be 1 or -1.
 
 Options:
     -h --help     Show this screen.
@@ -24,6 +25,11 @@ if __name__ == "__main__":
     yaml_conf = args["YAMLCONF"]
     motor_name = args["motor_name"]
     position_mm = float(args["position_mm"])
+    direction = int(args["direction"])
+
+    # Check that the direction is valid
+    if direction not in [-1, 1]:
+        raise ValueError(f"Direction {direction} is not valid. Must be 1 or -1.")
 
     # Check that the motor name is valid
     if motor_name not in ["motorX", "motorY", "motorZ"]:
@@ -52,5 +58,5 @@ if __name__ == "__main__":
     # Move the motor to the desired position
     for motor in motors:
         if motor.name == motor_name:
-            motor.move_to(motor.position_mm_to_steps(position_mm))
+            motor.move_motor(motor.motor_id, direction, motor.mm_to_steps(position_mm))
             motor.close()
