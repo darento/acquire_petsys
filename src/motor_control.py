@@ -190,6 +190,7 @@ def find_serial_port() -> serial.Serial:
 
     for port in ports:
         try:
+            print(port)
             ser = serial.Serial(port, baudrate=BAUDRATE, timeout=TIMEOUT)
             ser.rts = True
             start_signal = "<>".encode()
@@ -213,6 +214,7 @@ if __name__ == "__main__":
     # Find the motor port
     motor_ser = find_serial_port()
 
+    exit(0)
     motor = MotorControl(motor_ser, 1, 1, 3.0, 1.0, -0.25, "motorX", 1, 200, 200, 50)
 
     # Create an array of absolute positions
