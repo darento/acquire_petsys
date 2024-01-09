@@ -23,6 +23,7 @@ dependencies:
 - docopt       = 0.6.2
 - configparser = 5.0.2
 - pyserial     = 3.5
+- bitarray     = 2.9.2
 EOF
 
     if conda env list | grep ${CONDA_ENV_NAME};

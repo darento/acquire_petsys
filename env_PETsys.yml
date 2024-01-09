@@ -13,4 +13,5 @@ dependencies:
 - configparser = 5.0.2
 - pyserial     = 3.5
 - tqdm         = 4.66.1
+- bitarray     = 2.9.2
 prefix: C:\Users\david\anaconda3\envs\env_PETsys
