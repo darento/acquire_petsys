@@ -216,6 +216,10 @@ if __name__ == "__main__":
 
     log_file = os.path.join(yaml_dict["out_directory"], yaml_dict["out_name"] + ".log")
 
+    # Create the output directory if it doesn't exist
+    if not os.path.isdir(yaml_dict["out_directory"]):
+        os.makedirs(yaml_dict["out_directory"])
+
     # change to the petsys directory to run the acquire_sipm_data command or process files
     petsys_directory = yaml_dict["petsys_directory"]
     os.chdir(petsys_directory)
