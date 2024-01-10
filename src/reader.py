@@ -25,7 +25,7 @@ def read_bias_map(bias_file: str) -> dict:
             DAC_16P = int(line[6])
             DAC_32P = int(line[7])
             if port1k != "n/a":
-                port1k = int(line[0])
+                port1k = int(line[0]) - 1  # port1k starting from 0 instead of 1
                 try:
                     bias_map_dict[febd1k_str][BIAS_16P][port1k].append(
                         (slot_ID, DAC_16P)
