@@ -109,7 +109,7 @@ def acquire_data_scan(
             # Don't include the motor position in the file name
             full_out_name = config.yaml_dict[
                 "out_name"
-            ] + "_it{}_{}OV_{}T1_{}T2_{}E".format(it, v_bias, t1, t2, e)
+            ] + "_it{}_{}V_{}T1_{}T2_{}E".format(it, v_bias, t1, t2, e)
 
         file_dir = config.yaml_dict["out_directory"] + full_out_name
         petsys_commands.acquire_data(full_out_name)
@@ -120,7 +120,7 @@ def acquire_data_scan(
         with open(log_file, "a") as f:
             if step >= 0:
                 f.write(
-                    file_dir
+                    file_dirgit pu
                     + "\t"
                     + "\t".join(str(m.current_position_mm) for m in config.motors)
                     + "\n"
