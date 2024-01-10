@@ -104,7 +104,7 @@ def acquire_data_scan(
             # Include the motor position in the file name
             full_out_name = config.yaml_dict[
                 "out_name"
-            ] + "_pos{}_it{}_{}OV_{}T1_{}T2_{}E".format(step, it, v_bias, t1, t2, e)
+            ] + "_pos{}_it{}_{}V_{}T1_{}T2_{}E".format(step, it, v_bias, t1, t2, e)
         else:
             # Don't include the motor position in the file name
             full_out_name = config.yaml_dict[
