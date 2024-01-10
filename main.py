@@ -120,7 +120,7 @@ def acquire_data_scan(
         with open(log_file, "a") as f:
             if step >= 0:
                 f.write(
-                    file_dirgit pu
+                    file_dir
                     + "\t"
                     + "\t".join(str(m.current_position_mm) for m in config.motors)
                     + "\n"
