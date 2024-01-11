@@ -4,6 +4,7 @@ import glob
 import numpy as np
 import logging
 import time
+import os
 
 from src.config import MotorConfig
 
@@ -190,7 +191,10 @@ def find_serial_port() -> serial.Serial:
 
     for port in ports:
         try:
-            print(port)
+            # Change the permissions of the port to read and write
+            if not sys.platform.startswith("win"):
+                os.system(f"sudo chmod a+rw {port}")
+
             ser = serial.Serial(port, baudrate=BAUDRATE, timeout=TIMEOUT)
             ser.rts = True
             start_signal = "<>".encode()

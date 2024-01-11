@@ -19,7 +19,7 @@ def read_bias_map(bias_file: str) -> dict:
         bias_map_dict[febd8k_str] = {BIAS_16P: {}, BIAS_32P: {}, BIAS_64P: {}}
         for line in bias_data:
             port1k = line[0]
-            port8k = int(line[2])
+            port8k = int(line[2]) - 1  # port8k starting from 0 instead of 1
             slot_ID = int(line[4])
             DAC_64P = int(line[5])
             DAC_16P = int(line[6])
