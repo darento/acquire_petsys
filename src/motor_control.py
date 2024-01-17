@@ -18,6 +18,25 @@ WHILE_TIMEOUT = 300  # 5 minutes timeout for while loops
 class MotorControl:
     """Class to control a motor via serial communication."""
 
+    # Create a logger at the class level
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+
+    # Check if the logger has handlers
+    if not logger.handlers:
+        # Create a console handler with level DEBUG
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+
+        # Create a formatter and add it to the handler
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
+        handler.setFormatter(formatter)
+
+        # Add the handler to the logger
+        logger.addHandler(handler)
+
     def __init__(
         self,
         serial: serial.Serial,
@@ -25,9 +44,6 @@ class MotorControl:
         motor_name: str,
         motor_id: int,
     ) -> None:
-        # Initialize logging
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.DEBUG)
         """Initialize the serial connection to the motor."""
         print(f"Initializing motor '{motor_name}'...")
         self.ser = serial
