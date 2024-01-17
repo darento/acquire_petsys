@@ -75,7 +75,7 @@ class MotorControl:
         self.set_max_speed(motor_config.speed)
         self.set_acceleration(motor_config.acceleration)
 
-    def __write_command(self, command: bytes) -> None:
+    def _write_command(self, command: bytes) -> None:
         """Write a command to the serial port and wait for an 'F' response."""
         try:
             self.ser.write(command)
@@ -101,32 +101,32 @@ class MotorControl:
     def connection_motor(self) -> None:
         """Connect to the motor."""
         command = self._format_command("CON")
-        self.__write_command(command)
+        self._write_command(command)
 
     def set_speed(self, speed: int) -> None:
         """Set the speed."""
         command = self._format_command("SET_SPEED", self.motor_id, speed)
-        self.__write_command(command)
+        self._write_command(command)
 
     def set_max_speed(self, max_speed: int) -> None:
         """Set the maximum speed."""
         command = self._format_command("SET_MAX_SPEED", self.motor_id, max_speed)
-        self.__write_command(command)
+        self._write_command(command)
 
     def set_acceleration(self, acceleration: int) -> None:
         """Set the acceleration."""
         command = self._format_command("SET_ACCEL", self.motor_id, acceleration)
-        self.__write_command(command)
+        self._write_command(command)
 
     def move_motor(self, direction: int, steps: int) -> None:
         """Send move command to the specified motor."""
         command = self._format_command("MOVE", self.motor_id, direction, steps)
-        self.__write_command(command)
+        self._write_command(command)
 
     def move_motor_to(self, position: int) -> None:
         """Send move command to the specified motor."""
         command = self._format_command("MOVETO", self.motor_id, position)
-        self.__write_command(command)
+        self._write_command(command)
         self.current_position_mm = (
             position * self.motor_relation / STEPS_PER_REV / self.motor_microstep
         )
@@ -134,12 +134,12 @@ class MotorControl:
     def stop_motor(self) -> None:
         """Send stop command to a specified motor."""
         command = self._format_command("STOP", self.motor_id)
-        self.__write_command(command)
+        self._write_command(command)
 
     def pingLED(self) -> None:
         """Send a ping to the LED."""
         command = self._format_command("LED")
-        self.__write_command(command)
+        self._write_command(command)
 
     def find_home(self) -> None:
         """Find the home position."""
@@ -147,13 +147,13 @@ class MotorControl:
             "MOVE", self.motor_id, -1, 1000000
         )  # Move motor to the home position
         print(f"Searching for motor to HOME position...")
-        self.__write_command(command)
+        self._write_command(command)
         self.current_position_mm = 0.0
         self.steps_moved = 0  # Reset step count after moving to home position
 
         # Send the SET_ZERO command to set absolute position to 0
         command = self._format_command("SET_ZERO", self.motor_id)
-        self.__write_command(command)
+        self._write_command(command)
         print(f"Motor moved to HOME position.")
 
     def move_to_home(self) -> None:
