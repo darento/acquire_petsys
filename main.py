@@ -54,7 +54,7 @@ def process_files(petsys_commands: Commands, file_path: str) -> None:
     # total number of iterations
     total_iterations = len(file_names)
     # current iteration
-    current_iteration = 0
+    current_iteration = 1
 
     for full_out_name in file_names:
         # Record the start time of the iteration
@@ -80,6 +80,11 @@ def acquire_data_scan(
 ) -> None:
     # Initialize a list to store the time each iteration takes
     iteration_times = []
+
+    # Total number of iterations
+    total_iterations = sum(len(it) for it in config.iterables)
+
+    current_iteration = 1
 
     # Iterate over all the possible combinations of the iterables
     for it, v, t1, t2, e in product(*config.iterables):
@@ -133,8 +138,9 @@ def acquire_data_scan(
         iteration_times.append(end_time - start_time)
 
         estimate_remaining_time(
-            iteration_times, total_iterations, it, string_process="acquire_data"
+            iteration_times, total_iterations, scan_it, string_process="acquire_data"
         )
+        current_iteration += 1
 
 
 def print_motor_position(motor: MotorControl) -> None:
@@ -205,11 +211,6 @@ if __name__ == "__main__":
     time_T2 = yaml_dict["vth_t2"]
     time_E = yaml_dict["vth_e"]
     iterations = yaml_dict["iterations"]
-
-    # Total number of iterations
-    total_iterations = (
-        len(time_E) * len(time_T2) * len(time_T1) * len(voltages) * iterations
-    )
 
     # Create a list of iterables to iterate over
     iterables = [range(iterations), voltages, time_T1, time_T2, time_E]
