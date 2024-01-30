@@ -138,7 +138,10 @@ def acquire_data_scan(
         iteration_times.append(end_time - start_time)
 
         estimate_remaining_time(
-            iteration_times, total_iterations, scan_it, string_process="acquire_data"
+            iteration_times,
+            total_iterations,
+            current_iteration,
+            string_process="acquire_data",
         )
         current_iteration += 1
 
