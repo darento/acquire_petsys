@@ -12,6 +12,7 @@ Options:
     -m MODE       Mode to run the scan. Can be 'acquire', 'process' or 'both' [default: both]
 """
 
+from functools import reduce
 import time
 from docopt import docopt
 import yaml
@@ -82,7 +83,9 @@ def acquire_data_scan(
     iteration_times = []
 
     # Total number of iterations
-    total_iterations = sum(len(it) for it in config.iterables)
+    total_iterations = reduce(
+        lambda x, y: x * y, [len(sublist) for sublist in config.iterables]
+    )
 
     current_iteration = 1
 
