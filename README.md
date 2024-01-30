@@ -10,10 +10,17 @@ A .yaml file is provided to select the parameters needed to acquire and process 
 
 ## Installation
 
+### Windows
+
 To install the necessary dependencies, you can use the provided `env_PETsys.yml` file with conda:
 
 ```bash
 conda env create -f env_PETsys.yml
+```
+### Linux
+
+```bash
+source make_condaENV.sh 
 ```
 
 ## Usage
