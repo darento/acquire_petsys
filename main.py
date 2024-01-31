@@ -76,21 +76,33 @@ def process_files(petsys_commands: Commands, file_path: str) -> None:
 
 
 def acquire_data_scan(
-    config: ScanConfig,
+    scan_config: ScanConfig,
     step=-1,
 ) -> None:
+    # TODO: curren_iteration and total_iterations are not working properly when combining motor and bias scans != single value
     # Initialize a list to store the time each iteration takes
     iteration_times = []
 
     # Total number of iterations
     total_iterations = reduce(
-        lambda x, y: x * y, [len(sublist) for sublist in config.iterables]
+        lambda x, y: x * y, [len(sublist) for sublist in scan_config.iterables]
     )
 
-    current_iteration = 1
+    if step >= 0:
+        total_steps = reduce(
+            lambda x, y: x * y,
+            [len(m.array_of_positions()) for m in scan_config.motors],
+        )
+        total_iterations *= total_steps
+
+    if step >= 0:
+        # current iteration
+        current_iteration = step + 1
+    else:
+        current_iteration = 1
 
     # Iterate over all the possible combinations of the iterables
-    for it, v, t1, t2, e in product(*config.iterables):
+    for it, v, t1, t2, e in product(*scan_config.iterables):
         # Record the start time of the iteration
         start_time = time.time()
 
@@ -110,16 +122,16 @@ def acquire_data_scan(
         # Check if the motor is present
         if step >= 0:
             # Include the motor position in the file name
-            full_out_name = config.yaml_dict[
+            full_out_name = scan_config.yaml_dict[
                 "out_name"
             ] + "_pos{}_it{}_{}V_{}T1_{}T2_{}E".format(step, it, v_bias, t1, t2, e)
         else:
             # Don't include the motor position in the file name
-            full_out_name = config.yaml_dict[
+            full_out_name = scan_config.yaml_dict[
                 "out_name"
             ] + "_it{}_{}V_{}T1_{}T2_{}E".format(it, v_bias, t1, t2, e)
 
-        file_dir = config.yaml_dict["out_directory"] + full_out_name
+        file_dir = scan_config.yaml_dict["out_directory"] + full_out_name
         petsys_commands.acquire_data(full_out_name)
 
         print("------------------------------------------")
@@ -130,7 +142,7 @@ def acquire_data_scan(
                 f.write(
                     file_dir
                     + "\t"
-                    + "\t".join(str(m.current_position_mm) for m in config.motors)
+                    + "\t".join(str(m.current_position_mm) for m in scan_config.motors)
                     + "\n"
                 )
             else:
@@ -166,7 +178,7 @@ def close_motors(motors: List[MotorControl]) -> None:
 
 
 def move_motors_and_acquire_data(
-    config: ScanConfig,
+    scan_config: ScanConfig,
 ) -> None:
     # Open the log file and write the header with the motor names and the milimeters
     with open(log_file, "a") as f:
@@ -182,11 +194,11 @@ def move_motors_and_acquire_data(
 
     # Iterate over all the possible combinations of the iterables
     for it, positions in enumerate(position_matrix):
-        for motor, position in zip(config.motors, positions):
+        for motor, position in zip(scan_config.motors, positions):
             motor.move_motor_to(motor.mm_to_steps(position))
             print_motor_position(motor)
         acquire_data_scan(
-            config,
+            scan_config,
             step=it,
         )
 
