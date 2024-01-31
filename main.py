@@ -160,6 +160,11 @@ def move_motors_to_home_and_close(motors: List[MotorControl]) -> None:
         motor.close()
 
 
+def close_motors(motors: List[MotorControl]) -> None:
+    for motor in motors:
+        motor.close()
+
+
 def move_motors_and_acquire_data(
     config: ScanConfig,
 ) -> None:
@@ -263,7 +268,7 @@ if __name__ == "__main__":
                 bias_settings, disc_settings, yaml_dict, log_file, iterables, motors
             )
             move_motors_and_acquire_data(motor_scan_conf)
-            move_motors_to_home_and_close(motors)
+            close_motors(motors)
 
         if mode == "both":
             process_files(petsys_commands, log_file)
