@@ -20,7 +20,7 @@ class MotorControl:
 
     # Create a logger at the class level
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.WARNING)
 
     # Check if the logger has handlers
     if not logger.handlers:
