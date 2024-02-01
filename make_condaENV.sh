@@ -24,6 +24,7 @@ dependencies:
 - configparser = 5.0.2
 - pyserial     = 3.5
 - bitarray     = 2.9.2
+- termcolor    = 2.4.0
 EOF
 
     if conda env list | grep ${CONDA_ENV_NAME};

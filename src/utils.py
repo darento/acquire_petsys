@@ -1,4 +1,5 @@
 from typing import List
+from termcolor import colored
 
 
 def estimate_remaining_time(
@@ -14,6 +15,9 @@ def estimate_remaining_time(
     remaining_iterations = total_iterations - current_iteration
     estimated_remaining_time = avg_time_per_iteration * remaining_iterations
 
-    print(
-        f"Estimated remaining time for {string_process}: {round(estimated_remaining_time, 1)} seconds"
-    )
+    hours, remainder = divmod(estimated_remaining_time, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    time_string = f"Estimated remaining time for {string_process}: {int(hours)}:{int(minutes)}:{round(seconds, 1)}"
+    colored_string = colored(time_string, "green")
+
+    print(colored_string)
