@@ -146,7 +146,7 @@ class MotorControl:
         command = self._format_command(
             "MOVE", self.motor_id, -1, 1000000
         )  # Move motor to the home position
-        print(f"Searching for motor to HOME position...")
+        print(f"Searching for {self.motor_name} to HOME position...")
         self._write_command(command)
         self.current_position_mm = 0.0
         self.steps_moved = 0  # Reset step count after moving to home position
@@ -158,7 +158,7 @@ class MotorControl:
 
     def move_to_home(self) -> None:
         """Move motor to the home position."""
-        print(f"Moving motor to HOME position...")
+        print(f"Moving {self.motor_name} to HOME position...")
         self.move_motor_to(0)
         self.steps_moved = 0  # Reset step count after moving to home position
         self.current_position_mm = 0.0
