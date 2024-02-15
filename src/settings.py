@@ -74,21 +74,21 @@ class DiscSettings:
         if self.disc_ref_params:
             ref_det_th = self.dictionary["ref_det_ths"]
             for chipID in self.disc_ref_params:
-                self.disc_df.loc[
-                    (self.disc_df["chipID"] == chipID), "vth_t1"
-                ] = ref_det_th[0]
-                self.disc_df.loc[
-                    (self.disc_df["chipID"] == chipID), "vth_t2"
-                ] = ref_det_th[1]
-                self.disc_df.loc[
-                    (self.disc_df["chipID"] == chipID), "vth_e"
-                ] = ref_det_th[2]
+                self.disc_df.loc[(self.disc_df["chipID"] == chipID), "vth_t1"] = (
+                    ref_det_th[0]
+                )
+                self.disc_df.loc[(self.disc_df["chipID"] == chipID), "vth_t2"] = (
+                    ref_det_th[1]
+                )
+                self.disc_df.loc[(self.disc_df["chipID"] == chipID), "vth_e"] = (
+                    ref_det_th[2]
+                )
 
     def set_threshold(self, threshold: int, key: str) -> None:
         # self.disc_df.loc[~self.disc_df[['chipID']].isin(self.disc_ref_params).any(1), key] = threshold
-        self.disc_df.loc[
-            ~self.disc_df["chipID"].isin(self.disc_ref_params), key
-        ] = threshold
+        self.disc_df.loc[~self.disc_df["chipID"].isin(self.disc_ref_params), key] = (
+            threshold
+        )
 
     def write_disc_settings(self) -> None:
         new_disc_settings_path = self.dictionary["config_directory"]
