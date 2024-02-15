@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 
-"""Move the motor to the home position. Reverse the direction of the motor if it is not moving in the right direction. 
-Usage: move_to.py YAMLCONF motor_name position_mm direction
+"""
+Move the motor to the desired position.
+
+Usage:
+    move_to.py <YAMLCONF> <motorname> <position_mm> <direction>
 
 Arguments:
     YAMLCONF     File with all parameters to take into account in the scan.
-    motor_name   Name of the motor to move.
-    position_mm  Position in mm to move the motor to.
-    direction    Direction of the motor. Must be 1 or -1.
+    motorname    Name of the motor to move. Must be motorX, motorY or motorZ.
+    position_mm  Desired position for the motor in millimeters.
+    direction    Direction to move the motor. Must be 1 (forward) or 0 (backward).
 
 Options:
     -h --help     Show this screen.
@@ -22,15 +25,16 @@ from src.motor_control import find_serial_port
 
 if __name__ == "__main__":
     args = docopt(__doc__)
-    yaml_conf = args["YAMLCONF"]
-    motor_name = args["motor_name"]
-    position_mm = float(args["position_mm"])
-    direction = int(args["direction"])
+    yaml_conf = args["<YAMLCONF>"]
+    motor_name = args["<motorname>"]
+    position_mm = float(args["<position_mm>"])
+    direction = int(args["<direction>"])
 
     # Check that the direction is valid
-    if direction not in [-1, 1]:
-        raise ValueError(f"Direction {direction} is not valid. Must be 1 or -1.")
+    if direction not in [0, 1]:
+        raise ValueError(f"Direction {direction} is not valid. Must be 1 or 0.")
 
+    direction = -1 if direction == 0 else 1
     # Check that the motor name is valid
     if motor_name not in ["motorX", "motorY", "motorZ"]:
         raise ValueError(
@@ -57,6 +61,6 @@ if __name__ == "__main__":
 
     # Move the motor to the desired position
     for motor in motors:
-        if motor.name == motor_name:
-            motor.move_motor(motor.motor_id, direction, motor.mm_to_steps(position_mm))
+        if motor.motor_name == motor_name:
+            motor.move_motor(direction, motor.mm_to_steps(position_mm))
             motor.close()

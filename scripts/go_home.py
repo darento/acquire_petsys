@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """Move the motor to the home position. Reverse the direction of the motor if it is not moving in the right direction. 
-Usage: find_home.py YAMLCONF
+Usage: go_home.py YAMLCONF
 
 Arguments:
     YAMLCONF  File with all parameters to take into account in the scan.
