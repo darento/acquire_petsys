@@ -177,9 +177,7 @@ def close_motors(motors: List[MotorControl]) -> None:
         motor.close()
 
 
-def move_motors_and_acquire_data(
-    scan_config: ScanConfig,
-) -> None:
+def move_motors_and_acquire_data(scan_config: ScanConfig, step_ini: int = 0) -> None:
     # Open the log file and write the header with the motor names and the milimeters
     with open(log_file, "a") as f:
         f.write(
@@ -199,7 +197,7 @@ def move_motors_and_acquire_data(
             print_motor_position(motor)
         acquire_data_scan(
             scan_config,
-            step=it,
+            step=it + step_ini,
         )
 
 
@@ -262,6 +260,7 @@ if __name__ == "__main__":
             )
             acquire_data_scan(no_motor_scan_conf)
         else:
+            pos_ini = yaml_dict["pos_ini"]
             # Find the motors port
             motors_serial = find_serial_port()
 
@@ -279,7 +278,7 @@ if __name__ == "__main__":
             motor_scan_conf = ScanConfig(
                 bias_settings, disc_settings, yaml_dict, log_file, iterables, motors
             )
-            move_motors_and_acquire_data(motor_scan_conf)
+            move_motors_and_acquire_data(motor_scan_conf, pos_ini)
             close_motors(motors)
 
         if mode == "both":

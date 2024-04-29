@@ -1,12 +1,12 @@
 #config.ini file directory
-config_directory: "C:/Users/David/Desktop/Python/PETsyScan/test_data/FEM128/"
+config_directory: "C:/Users/David/Desktop/Git/PETsyScan/test_data/FEM128/"
 
 #PETsys binaries directory 
-petsys_directory: "C:/Users/David/Desktop/Python/PETsys_sw_fake/"
+petsys_directory: "C:/Users/David/Desktop/Git/PETsys_sw_fake/"
 
 #output base name and directory
-out_name: "20230108_PRIMERTEST"
-out_directory: "C:/Users/David/Desktop/Python/PETsyScan/test_data/"
+out_name: "20240131_debug"
+out_directory: "C:/Users/David/Desktop/Git/PETsyScan/test_data/"
 
 #FEM being used (FEM128/FEM256)
 FEM: "FEM128"
@@ -21,7 +21,7 @@ BIAS_board: "BIAS_16P"
 # 1- FEB/D portID if there is, -1 if no reference detector is present (always starting from 0)
 # 2- Voltages [Vpre-break, Vbreak, Vov]
 # 3- Thresholds
-ref_det_febd: 7
+ref_det_febd: 2
 ref_det_volt: [30.0, 37.5, 3.0]
 ref_det_ths: [30, 15, 12]
 
@@ -75,11 +75,22 @@ motor: True
 num_motors: 1
 
 # Motor name and parameters. If motor is False, these parameters are ignored
+# start and end are in mm
+# step_size is in mm
+# microstep is the microstep of the motor driver (1, 2, 4, 8, 16, 32)
+# relation is the relation between the motor and the detector (mm/rev)
+# speed is the speed of the motor (steps/s)
+# max_speed is the maximum speed of the motor (steps/s)
+# acceleration is the acceleration of the motor (steps/s^2)
+
+# Initial position number to continue with the scan if it was stopped (use pos_ini = 0 to start from the beginning)
+pos_ini: 3
+
 motorX:
   type: linear
-  start: 1.0
-  end: 2.0
-  step_size: 0.25 
+  start: 10.0
+  end: 14.5
+  step_size: 0.8 
   microstep: 16
   relation: 1.5
   speed: 4000
