@@ -138,7 +138,7 @@ def validate_yaml_dict(yaml_dict: Dict[str, Any]) -> None:
     # Validate pos_ini is integer > 0
     if "pos_ini" in yaml_dict:
         assert isinstance(yaml_dict["pos_ini"], int), "'pos_ini' should be an integer"
-        assert yaml_dict["pos_ini"] > 0, "'pos_ini' should be greater than 0"
+        assert yaml_dict["pos_ini"] >= 0, "'pos_ini' should be greater or equal to 0"
     # Validate number of motors
     if "num_motors" in yaml_dict:
         assert yaml_dict["num_motors"] in [1, 2, 3], "'num_motors' should be 1, 2, or 3"
