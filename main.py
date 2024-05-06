@@ -260,7 +260,7 @@ if __name__ == "__main__":
             )
             acquire_data_scan(no_motor_scan_conf)
         else:
-            pos_ini = yaml_dict["pos_ini"]
+            pos_ini = yaml_dict.get("pos_ini", 0)
             # Find the motors port
             motors_serial = find_serial_port()
 
