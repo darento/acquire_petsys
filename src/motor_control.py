@@ -82,10 +82,9 @@ class MotorControl:
             self.logger.debug(f"Sent command: {command}")
             # Wait for an 'F', make it sequential
             start_time = time.time()
-            timeout = WHILE_TIMEOUT  # Timeout after 5 seconds
             response = ""
             while not response.endswith("F"):
-                if time.time() - start_time > timeout:
+                if time.time() - start_time > WHILE_TIMEOUT:
                     self.logger.error("Timeout waiting for response")
                     raise TimeoutError("Timeout waiting for response from motor")
                 response += self.ser.read_until(b"F").decode().strip()
