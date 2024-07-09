@@ -65,6 +65,9 @@ vth_e: [1]
 # Number of iterations of the whole scan
 iterations: 1
 
+# Time between iterations in seconds
+time_between_iterations: 10.0
+
 # MOTOR PARAMETERS IF USED FOR SCAN
 # -------------------------------
 

@@ -77,6 +77,7 @@ def process_files(petsys_commands: Commands, file_path: str) -> None:
 
 def acquire_data_scan(
     scan_config: ScanConfig,
+    time_sleep: float,
     step=-1,
 ) -> None:
     # TODO: curren_iteration and total_iterations are not working properly when combining motor and bias scans != single value
@@ -101,6 +102,7 @@ def acquire_data_scan(
     else:
         current_iteration = 1
 
+    iteration = -1
     # Iterate over all the possible combinations of the iterables
     for it, v, t1, t2, e in product(*scan_config.iterables):
         # Record the start time of the iteration
@@ -159,6 +161,11 @@ def acquire_data_scan(
             string_process="acquire_data",
         )
         current_iteration += 1
+        # sleep between iterations, when it changes
+        if iteration != it:
+            print(f"Sleeping for {time_sleep} seconds")
+            time.sleep(time_sleep)
+            iteration = it
 
 
 def print_motor_position(motor: MotorControl) -> None:
@@ -177,7 +184,9 @@ def close_motors(motors: List[MotorControl]) -> None:
         motor.close()
 
 
-def move_motors_and_acquire_data(scan_config: ScanConfig, step_ini: int = 0) -> None:
+def move_motors_and_acquire_data(
+    scan_config: ScanConfig, time_sleep: float, step_ini: int = 0
+) -> None:
     # Open the log file and write the header with the motor names and the milimeters
     with open(log_file, "a") as f:
         f.write(
@@ -197,6 +206,7 @@ def move_motors_and_acquire_data(scan_config: ScanConfig, step_ini: int = 0) -> 
             print_motor_position(motor)
         acquire_data_scan(
             scan_config,
+            time_sleep,
             step=it + step_ini,
         )
 
@@ -233,6 +243,11 @@ if __name__ == "__main__":
     time_E = yaml_dict["vth_e"]
     iterations = yaml_dict["iterations"]
 
+    if iterations > 1:
+        time_sleep = yaml_dict["time_between_iterations"]
+    else:
+        time_sleep = 0
+
     # Create a list of iterables to iterate over
     iterables = [range(iterations), voltages, time_T1, time_T2, time_E]
 
@@ -258,7 +273,7 @@ if __name__ == "__main__":
             no_motor_scan_conf = ScanConfig(
                 bias_settings, disc_settings, yaml_dict, log_file, iterables
             )
-            acquire_data_scan(no_motor_scan_conf)
+            acquire_data_scan(no_motor_scan_conf, time_sleep)
         else:
             pos_ini = yaml_dict.get("pos_ini", 0)
             # Find the motors port
@@ -278,7 +293,7 @@ if __name__ == "__main__":
             motor_scan_conf = ScanConfig(
                 bias_settings, disc_settings, yaml_dict, log_file, iterables, motors
             )
-            move_motors_and_acquire_data(motor_scan_conf, pos_ini)
+            move_motors_and_acquire_data(motor_scan_conf, time_sleep, pos_ini)
             close_motors(motors)
 
         if mode == "both":

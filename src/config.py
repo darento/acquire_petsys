@@ -132,6 +132,9 @@ def validate_yaml_dict(yaml_dict: Dict[str, Any]) -> None:
         isinstance(i, int) for i in yaml_dict["vth_e"]
     ), "Todos los elementos en vth_e deben ser enteros"
     assert isinstance(yaml_dict["iterations"], int), "iterations debe ser un entero"
+    assert isinstance(
+        yaml_dict["time_between_iterations"], float
+    ), "time_between_iterations debe ser un flotante"
     # Validate motor flag
     if "motor" in yaml_dict:
         assert isinstance(yaml_dict["motor"], bool), "'motor' should be a boolean"
