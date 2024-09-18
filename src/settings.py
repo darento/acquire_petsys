@@ -137,7 +137,11 @@ class Commands:
         }
         sufix, process_command = data_type_mapping[self.dictionary["data_type"]]
         output_format = data_format_mapping[self.dictionary["data_format"]]
-        process_out_name = full_out_name + sufix
+        process_out_name = (
+            full_out_name + sufix + "Compact"
+            if self.dictionary["data_compact"]
+            else full_out_name + sufix
+        )
         command = (
             f"{process_command} --config {self.dictionary['config_directory']}config.ini "
             f"-i {full_out_name} "
