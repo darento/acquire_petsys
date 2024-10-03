@@ -54,9 +54,9 @@ if __name__ == "__main__":
     # Create a MotorControl instance for each motor
     motors = []
     for i in range(yaml_dict["num_motors"]):
-        motor_name = f"motor{chr(88 + i)}"  # 88 is ASCII for 'X'
-        motor_config = MotorConfig(yaml_dict[motor_name])
-        motor = MotorControl(motors_serial, motor_config, motor_name, i + 1)
+        motor_name_loop = f"motor{chr(88 + i)}"  # 88 is ASCII for 'X'
+        motor_config = MotorConfig(yaml_dict[motor_name_loop])
+        motor = MotorControl(motors_serial, motor_config, motor_name_loop, i + 1)
         motors.append(motor)
 
     # Move the motor to the desired position
