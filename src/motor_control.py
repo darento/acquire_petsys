@@ -230,23 +230,4 @@ def find_serial_port() -> serial.Serial:
 
 
 if __name__ == "__main__":
-    # Find the motor port
-    motor_ser = find_serial_port()
-
-    exit(0)
-    motor = MotorControl(motor_ser, 1, 1, 3.0, 1.0, -0.25, "motorX", 1, 200, 200, 50)
-
-    # Create an array of absolute positions
-    positions_mm = np.arange(
-        motor.motor_start,
-        motor.motor_end + motor.motor_step_size,
-        motor.motor_step_size,
-    )
-
-    # Move the motor to each position
-    for position_mm in [1.1, 0.5, 2.3, 4.5]:
-        motor.move_motor_to(motor.mm_to_steps(position_mm))
-        print(f"Motor moved to {motor.current_position_mm}mm")
-    motor.move_to_home()
-    print(f"Motor moved to {motor.current_position_mm}mm")
-    motor.close()
+    pass

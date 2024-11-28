@@ -15,6 +15,7 @@ class MotorConfig:
         self.speed = config["speed"]
         self.max_speed = config["max_speed"]
         self.acceleration = config["acceleration"]
+        self.type = config["type"]
 
 
 class ScanConfig:
