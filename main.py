@@ -204,6 +204,8 @@ def move_motors_and_acquire_data(
         for motor, position in zip(scan_config.motors, positions):
             motor.move_motor_to(motor.mm_to_steps(position))
             print_motor_position(motor)
+        if it < step_ini:
+            continue
         acquire_data_scan(
             scan_config,
             time_sleep,
