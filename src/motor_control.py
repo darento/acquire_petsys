@@ -59,6 +59,7 @@ class MotorControl:
     ) -> None:
         """Configure motor parameters and initialize position."""
         # Motor parameters for step-wise movement
+        self.motor_type = motor_config.type
         self.motor_relation = motor_config.relation
         self.motor_microstep = (
             motor_config.microstep
@@ -66,7 +67,7 @@ class MotorControl:
         self.motor_start = motor_config.start
         self.motor_end = motor_config.end
         self.motor_step_size = motor_config.step_size
-        self.current_position_mm = self.motor_start  # Initialize at start position
+        self.current_position = self.motor_start  # Initialize at start position
         self.total_steps_required = 0
         self.steps_moved = 0
         self.motor_name = motor_name
@@ -117,18 +118,19 @@ class MotorControl:
         command = self._format_command("SET_ACCEL", self.motor_id, acceleration)
         self._write_command(command)
 
-    def move_motor(self, direction: int, steps: int) -> None:
-        """Send move command to the specified motor."""
+    def move_motor(self, direction: int, position: int) -> None:
+        """Send move command (mm or degrees) to the specified motor."""
+        steps = self.position_to_steps(position)
         command = self._format_command("MOVE", self.motor_id, direction, steps)
         self._write_command(command)
+        self.current_position += position
 
     def move_motor_to(self, position: int) -> None:
-        """Send move command to the specified motor."""
-        command = self._format_command("MOVETO", self.motor_id, position)
+        """Send move to command (mm or degrees) to the specified motor."""
+        steps = self.position_to_steps(position)
+        command = self._format_command("MOVETO", self.motor_id, steps)
         self._write_command(command)
-        self.current_position_mm = (
-            position * self.motor_relation / STEPS_PER_REV / self.motor_microstep
-        )
+        self.current_position = position
 
     def stop_motor(self) -> None:
         """Send stop command to a specified motor."""
@@ -147,7 +149,7 @@ class MotorControl:
         )  # Move motor to the home position
         print(f"Searching for {self.motor_name} to HOME position...")
         self._write_command(command)
-        self.current_position_mm = 0.0
+        self.current_position = 0.0
         self.steps_moved = 0  # Reset step count after moving to home position
 
         # Send the SET_ZERO command to set absolute position to 0
@@ -160,23 +162,30 @@ class MotorControl:
         print(f"Moving {self.motor_name} to HOME position...")
         self.move_motor_to(0)
         self.steps_moved = 0  # Reset step count after moving to home position
-        self.current_position_mm = 0.0
+        self.current_position = 0.0
         print(f"Motor moved to HOME position.")
 
-    def mm_to_steps(self, position_mm: float) -> int:
-        """Convert mm to steps."""
-        target_revs = position_mm / self.motor_relation
-        target_steps = int(target_revs * STEPS_PER_REV * self.motor_microstep)
+    def position_to_steps(self, position: float) -> int:
+        """Convert the position (mm or degrees) into steps."""
+        if self.motor_type == "linear":
+            target_revs = position / self.motor_relation
+            target_steps = int(target_revs * STEPS_PER_REV * self.motor_microstep)
+        elif self.motor_type == "rotatory":
+            degrees_per_rev = 360
+            target_revs = position / degrees_per_rev
+            target_steps = int(target_revs * STEPS_PER_REV * self.motor_microstep)
+        else:
+            raise ValueError(f"Motor type {self.motor_type} unknown.")
         return target_steps
 
     def array_of_positions(self) -> np.array:
-        """Create an array of absolute positions."""
-        positions_mm = np.arange(
+        """Create an array of absolute positions (mm or degrees)."""
+        positions = np.arange(
             self.motor_start,
             self.motor_end + self.motor_step_size,
             self.motor_step_size,
         )
-        return positions_mm
+        return positions
 
     def close(self) -> None:
         """Close the serial connection."""

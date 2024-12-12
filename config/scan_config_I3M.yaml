@@ -87,18 +87,18 @@ num_motors: 1
 # acceleration is the acceleration of the motor (steps/s^2)
 
 # Initial position number to continue with the scan if it was stopped (use pos_ini = 0 to start from the beginning)
-pos_ini: 3
+pos_ini: 0
 
 motorX:
-  type: linear
-  start: 10.0
-  end: 14.5
-  step_size: 0.8 
-  microstep: 16
-  relation: 1.5
-  speed: 4000
-  max_speed: 4000
-  acceleration: 800
+  type: linear      # Can be linear or rotatory
+  start: 10.0       # Initial position in mm or degrees
+  end: 14.5         # Final position in mm or degrees
+  step_size: 0.8    # Step size in mm or degrees
+  microstep: 16     # Microstep of the motor driver
+  relation: 1.5     # Relation between the motor and the detector (only used in the linear, mm/rev)
+  speed: 4000       # Speed of the motor (steps/s)
+  max_speed: 4000   # Maximum speed of the motor (steps/s)
+  acceleration: 800 # Acceleration of the motor (steps/s^2)
   
 motorY:
   type: linear
