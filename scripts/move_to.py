@@ -62,5 +62,5 @@ if __name__ == "__main__":
     # Move the motor to the desired position
     for motor in motors:
         if motor.motor_name == motor_name:
-            motor.move_motor(direction, motor.mm_to_steps(position_mm))
+            motor.move_motor(direction, position_mm)
             motor.close()

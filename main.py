@@ -202,7 +202,7 @@ def move_motors_and_acquire_data(
     # Iterate over all the possible combinations of the iterables
     for it, positions in enumerate(position_matrix):
         for motor, position in zip(scan_config.motors, positions):
-            motor.move_motor_to(motor.mm_to_steps(position))
+            motor.move_motor_to(position)
             print_motor_position(motor)
         if it < step_ini:
             continue
