@@ -172,7 +172,9 @@ class MotorControl:
             target_steps = int(target_revs * STEPS_PER_REV * self.motor_microstep)
         elif self.motor_type == "rotatory":
             degrees_per_rev = 360
-            target_revs = position / degrees_per_rev
+            target_revs = (
+                position / degrees_per_rev * 10
+            )  # looks like there is a 10:1 gear ratio in the rotor motor
             target_steps = int(target_revs * STEPS_PER_REV * self.motor_microstep)
         else:
             raise ValueError(f"Motor type {self.motor_type} unknown.")
@@ -195,15 +197,18 @@ class MotorControl:
             print(f"Failed to close serial port: {e}")
 
 
-def find_serial_port() -> serial.Serial:
+def find_serial_port(COM_port: str = "") -> serial.Serial:
     """Find the motor serial connection and return it.
 
+    :param COM_port: The COM port to connect to (default is "")
     :raises EnvironmentError: On unsupported or unknown platforms
     :returns: a serial.Serial object with the motor connection open and ready
     to use for communication
     """
     logger = logging.getLogger(__name__)
     logger.info("Searching for motor port...")
+    if COM_port:
+        ports = [COM_port]
     if sys.platform.startswith("win"):
         ports = [f"COM{i + 1}" for i in range(256)]
     elif sys.platform.startswith("linux") or sys.platform.startswith("cygwin"):

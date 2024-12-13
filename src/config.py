@@ -139,6 +139,8 @@ def validate_yaml_dict(yaml_dict: Dict[str, Any]) -> None:
     # Validate motor flag
     if "motor" in yaml_dict:
         assert isinstance(yaml_dict["motor"], bool), "'motor' should be a boolean"
+    if "COM_port" in yaml_dict:
+        assert isinstance(yaml_dict["COM_port"], str), "'COM_port' should be a string"
     # Validate pos_ini is integer > 0
     if "pos_ini" in yaml_dict:
         assert isinstance(yaml_dict["pos_ini"], int), "'pos_ini' should be an integer"

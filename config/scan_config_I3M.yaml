@@ -73,6 +73,7 @@ time_between_iterations: 10.0
 
 # Motor flag (True/False)
 motor: True
+COM_port: ""
 
 # Number of motors (1, 2 or 3)
 num_motors: 1
