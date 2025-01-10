@@ -169,15 +169,14 @@ class MotorControl:
         """Convert the position (mm or degrees) into steps."""
         if self.motor_type == "linear":
             target_revs = position / self.motor_relation
-            target_steps = int(target_revs * STEPS_PER_REV * self.motor_microstep)
         elif self.motor_type == "rotatory":
             degrees_per_rev = 360
             target_revs = (
                 position / degrees_per_rev * 10
             )  # looks like there is a 10:1 gear ratio in the rotor motor
-            target_steps = int(target_revs * STEPS_PER_REV * self.motor_microstep)
         else:
             raise ValueError(f"Motor type {self.motor_type} unknown.")
+        target_steps = int(target_revs * STEPS_PER_REV * self.motor_microstep)
         return target_steps
 
     def array_of_positions(self) -> np.array:
