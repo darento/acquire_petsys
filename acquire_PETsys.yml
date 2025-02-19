@@ -1,5 +1,6 @@
 name: acquire_PETsys
 channels:
+  - conda-forge
   - defaults
 dependencies:
   - python       = 3.11
@@ -16,4 +17,3 @@ dependencies:
     - tqdm         = 4.66.1
     - bitarray     = 2.9.2
     - termcolor    = 2.4.0
-prefix: C:\Users\david\anaconda3\envs\env_PETsys
