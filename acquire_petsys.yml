@@ -1,4 +1,4 @@
-name: acquire_PETsys
+name: acquire_petsys
 channels:
   - conda-forge
   - defaults
