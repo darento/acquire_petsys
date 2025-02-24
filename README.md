@@ -1,4 +1,4 @@
-# PETsyScan
+# ACQUIRE_PETSYS
 
 This module allows any PETsys user to acquire and process data from any PETsys systems setup.
 
@@ -12,15 +12,19 @@ A .yaml file is provided to select the parameters needed to acquire and process 
 
 ### Windows
 
-To install the necessary dependencies, you can use the provided `env_PETsys.yml` file with conda:
+To install the necessary dependencies, you can use the provided `acquire_petsys.yml` file with conda:
 
 ```bash
-conda env create -f env_PETsys.yml
+conda env create -f acquire_petsys.yml
 ```
 ### Linux
 
 ```bash
 source make_condaENV.sh 
+```
+or again
+```bash
+conda env create -f acquire_petsys.yml
 ```
 
 ## Usage
@@ -28,7 +32,7 @@ source make_condaENV.sh
 First of all, you need to activate the conda enviorment:
 
 ```bash
-source /home/user/miniconda/bin/activate env_PETsys
+source /home/user/miniconda/bin/activate acquire_petsys
 ```
 
 Then, to run the script to perform the PETsys scan, use the following command:
