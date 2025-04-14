@@ -43,8 +43,6 @@ CSIC - UPV
 #define motorInterfaceType 1 //Debe ser 1 si se usan drivers
 #define MAX_MOTORES 3
 
-int numMotoresActivos = MAX_MOTORES;
-
 AccelStepper X=AccelStepper(motorInterfaceType,X_STEP_PIN,X_DIR_PIN);
 AccelStepper Y=AccelStepper(motorInterfaceType,Y_STEP_PIN,Y_DIR_PIN);
 AccelStepper Z=AccelStepper(motorInterfaceType,Z_STEP_PIN,Z_DIR_PIN);
@@ -57,15 +55,19 @@ void setupMotor(AccelStepper& motor, int stepPin, int dirPin, int enablePin, int
   pinMode(enablePin, OUTPUT);
   pinMode(minPin, INPUT_PULLUP);
   pinMode(maxPin, INPUT_PULLUP);
-  digitalWrite(enablePin, LOW);
-  motor.setMaxSpeed(200);
-  motor.setSpeed(200);
-  motor.setAcceleration(50);
+  digitalWrite(dirPin, HIGH);       // Dirección
+  digitalWrite(enablePin, LOW);       // Habilita driver
+  motor.setMaxSpeed(2000);
+  motor.setSpeed(2000);
+  motor.setAcceleration(200);
 }
 
 void setMotorParameter(String command, int motor, int firstCommaIndex, void (*setFunc)(AccelStepper&, int)) {
   int secondCommaIndex = command.indexOf(',', firstCommaIndex + 1);
   int value = command.substring(secondCommaIndex + 1).toInt();
+  Serial.println(firstCommaIndex);
+  Serial.println(secondCommaIndex);
+  Serial.println(value);
   if (motor == 1) setFunc(X, value);
   if (motor == 2) setFunc(Y, value);
   if (motor == 3) setFunc(Z, value);
@@ -96,6 +98,7 @@ void setup() {
   Serial.print("<>");
 }
 
+
 void connectionMotor() {
   String info = "MOTORUP\n";
   Serial.println(info);
@@ -110,17 +113,13 @@ void pingLED(){
   Serial.println("F");
 }
 
-void setNumMotores(int num) {
-  numMotoresActivos = max(1, min(num, MAX_MOTORES));
-  Serial.println("F");
-}
 
 void processMoveCommand(String command, int motorNum, int firstCommaIndex, bool isAbsolute) {
   int secondCommaIndex = command.indexOf(',', firstCommaIndex + 1);
   int thirdCommaIndex = command.indexOf(',', secondCommaIndex + 1);
   int dir = isAbsolute ? 0 : command.substring(secondCommaIndex + 1, thirdCommaIndex).toInt();
   long distance = command.substring(isAbsolute ? secondCommaIndex + 1 : thirdCommaIndex + 1).toInt();
-  if (motorNum > 0 && motorNum <= numMotoresActivos) {
+  if (motorNum > 0 && motorNum <= MAX_MOTORES) {
     moveMotor(motorNum, dir, distance, isAbsolute);
   }
 }
@@ -216,8 +215,6 @@ void processCommand(String command) {
 
   if (action == "CON"){
     connectionMotor();
-  } else if (action == "SETMOTORS") {
-    setNumMotores(motorNum); // In this case, motorNum corresponds to the number of motors to set 
   } else if (action == "STOP") {
     stopMotor(motorNum, false);
   } else if (action == "MOVE") {  // Unused for now, prefer to use MOVETO

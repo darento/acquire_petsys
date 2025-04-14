@@ -20,7 +20,7 @@ class MotorControl:
 
     # Create a logger at the class level
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.WARNING)
+    logger.setLevel(logging.INFO)
 
     # Check if the logger has handlers
     if not logger.handlers:
@@ -72,9 +72,9 @@ class MotorControl:
         self.steps_moved = 0
         self.motor_name = motor_name
         self.motor_id = motor_id
-        self.set_speed(motor_config.speed)
-        self.set_max_speed(motor_config.speed)
         self.set_acceleration(motor_config.acceleration)
+        self.set_speed(motor_config.speed)
+        self.set_max_speed(motor_config.max_speed)
 
     def _write_command(self, command: bytes) -> None:
         """Write a command to the serial port and wait for an 'F' response."""
@@ -107,16 +107,19 @@ class MotorControl:
         """Set the speed."""
         command = self._format_command("SET_SPEED", self.motor_id, speed)
         self._write_command(command)
+        self.logger.info(f"Motor {self.motor_name} speed set to {speed}")
 
     def set_max_speed(self, max_speed: int) -> None:
         """Set the maximum speed."""
         command = self._format_command("SET_MAX_SPEED", self.motor_id, max_speed)
         self._write_command(command)
+        self.logger.info(f"Motor {self.motor_name} max speed set to {max_speed}")
 
     def set_acceleration(self, acceleration: int) -> None:
         """Set the acceleration."""
         command = self._format_command("SET_ACCEL", self.motor_id, acceleration)
         self._write_command(command)
+        self.logger.info(f"Motor {self.motor_name} acceleration set to {acceleration}")
 
     def move_motor(self, direction: int, position: int) -> None:
         """Send move command (mm or degrees) to the specified motor."""
