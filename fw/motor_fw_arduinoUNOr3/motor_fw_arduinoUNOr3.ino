@@ -57,9 +57,9 @@ void setupMotor(AccelStepper& motor, int stepPin, int dirPin, int enablePin, int
   pinMode(maxPin, INPUT_PULLUP);
   digitalWrite(dirPin, HIGH);       // Dirección
   digitalWrite(enablePin, LOW);       // Habilita driver
-  motor.setMaxSpeed(2000);
-  motor.setSpeed(2000);
-  motor.setAcceleration(200);
+  motor.setMaxSpeed(3000);
+  motor.setSpeed(3000);
+  motor.setAcceleration(800);
 }
 
 void setMotorParameter(String command, int motor, int firstCommaIndex, void (*setFunc)(AccelStepper&, int)) {
@@ -161,7 +161,8 @@ void checkEndstopAndStopMotor(int motor, int dir, int minPin, int maxPin, bool& 
   if (digitalRead(minPin) == LOW || digitalRead(maxPin) == LOW) {
     if (!endstopHit) {
       stopMotor(motor, true);
-      stepper.move(-dir * 100); // Move a small amount in the opposite direction
+      stepper.move(-dir * 1800); // Move a small amount in the opposite direction
+      
       endstopHit = true;
     }
   } else {
@@ -237,6 +238,6 @@ void processCommand(String command) {
 void loop() {
   if (Serial.available() > 0) {
     String command = Serial.readStringUntil('\n');
-    processCommand(command);
+    processCommand(command);    
   }
 }

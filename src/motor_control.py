@@ -211,14 +211,15 @@ def find_serial_port(COM_port: str = "") -> serial.Serial:
     logger.info("Searching for motor port...")
     if COM_port:
         ports = [COM_port]
-    if sys.platform.startswith("win"):
-        ports = [f"COM{i + 1}" for i in range(256)]
-    elif sys.platform.startswith("linux") or sys.platform.startswith("cygwin"):
-        ports = glob.glob("/dev/tty[A-Za-z]*")
-    elif sys.platform.startswith("darwin"):
-        ports = glob.glob("/dev/tty.*")
     else:
-        raise EnvironmentError("Unsupported platform")
+        if sys.platform.startswith("win"):
+            ports = [f"COM{i + 1}" for i in range(256)]
+        elif sys.platform.startswith("linux") or sys.platform.startswith("cygwin"):
+            ports = glob.glob("/dev/tty[A-Za-z]*")
+        elif sys.platform.startswith("darwin"):
+            ports = glob.glob("/dev/tty.*")
+        else:
+            raise EnvironmentError("Unsupported platform")
 
     for port in ports:
         try:
