@@ -21,8 +21,8 @@ CSIC - UPV
 #define Y_STEP_PIN      3
 #define Y_DIR_PIN       6
 #define Y_ENABLE_PIN    8
-#define Y_MIN_PIN       11
-#define Y_MAX_PIN       12
+#define Y_MIN_PIN       12
+#define Y_MAX_PIN       13
 
 #define Z_STEP_PIN      4
 #define Z_DIR_PIN       7
@@ -42,6 +42,13 @@ CSIC - UPV
 
 #define motorInterfaceType 1 //Debe ser 1 si se usan drivers
 #define MAX_MOTORES 3
+
+int endstopCountX = 0;
+int endstopCountY = 0; 
+int endstopCountZ = 0;
+bool endstopHitX = false;
+bool endstopHitY = false;
+bool endstopHitZ = false;
 
 AccelStepper X=AccelStepper(motorInterfaceType,X_STEP_PIN,X_DIR_PIN);
 AccelStepper Y=AccelStepper(motorInterfaceType,Y_STEP_PIN,Y_DIR_PIN);
@@ -125,6 +132,18 @@ void processMoveCommand(String command, int motorNum, int firstCommaIndex, bool 
 }
 
 void moveMotor(int motor, int dir, long distance, bool isAbsolute) {
+  // Reset endstop flags at start of new movement
+  if (motor == 1) {
+    endstopHitX = false;
+    endstopCountX = 0;
+  } else if (motor == 2) {
+    endstopHitY = false;
+    endstopCountY = 0;
+  } else if (motor == 3) {
+    endstopHitZ = false;
+    endstopCountZ = 0;
+  }
+  
   if (motor == 1) {
     if (isAbsolute) {
       X.moveTo(distance);
@@ -157,30 +176,39 @@ void moveMotor(int motor, int dir, long distance, bool isAbsolute) {
   Serial.println("F");
 }
 
-void checkEndstopAndStopMotor(int motor, int dir, int minPin, int maxPin, bool& endstopHit, AccelStepper& stepper) {
+void checkEndstopAndStopMotor(int motor, int dir, int minPin, int maxPin, bool& endstopHit, AccelStepper& stepper, int& endstopCount) {
+  // Check if either endstop is triggered
   if (digitalRead(minPin) == LOW || digitalRead(maxPin) == LOW) {
-    if (!endstopHit) {
-      stopMotor(motor, true);
-      stepper.move(-dir * 1800); // Move a small amount in the opposite direction
-      
-      endstopHit = true;
-    }
+    endstopCount++; // Increment counter for consecutive LOW readings
   } else {
-    endstopHit = false;
+    endstopCount = 0; // Reset counter if HIGH
+  }
+  
+  // If we have 5 consecutive LOW readings and haven't handled this endstop event yet
+  if (endstopCount >= 5 && !endstopHit) {
+    stopMotor(motor, true);
+    stepper.move(-dir * 1800); // Move a small amount in the opposite direction
+    
+    // Execute the backup movement completely
+    while (stepper.distanceToGo() != 0) {
+      stepper.run();
+    }
+    
+    // Cancel any further movement
+    stepper.moveTo(stepper.currentPosition());
+    
+    endstopHit = true;
+    endstopCount = 0; // Reset counter
   }
 }
 
 void checkEndstopsAndStopMotors(int motor, int dir) {
-  static bool endstopHitX = false;
-  static bool endstopHitY = false;
-  static bool endstopHitZ = false;
-
   if (motor == 1) {
-    checkEndstopAndStopMotor(motor, dir, X_MIN_PIN, X_MAX_PIN, endstopHitX, X);
+    checkEndstopAndStopMotor(motor, dir, X_MIN_PIN, X_MAX_PIN, endstopHitX, X, endstopCountX);
   } else if (motor == 2) {
-    checkEndstopAndStopMotor(motor, dir, Y_MIN_PIN, Y_MAX_PIN, endstopHitY, Y);
+    checkEndstopAndStopMotor(motor, dir, Y_MIN_PIN, Y_MAX_PIN, endstopHitY, Y, endstopCountY);
   } else if (motor == 3) {
-    checkEndstopAndStopMotor(motor, dir, Z_MIN_PIN, Z_MAX_PIN, endstopHitZ, Z);
+    checkEndstopAndStopMotor(motor, dir, Z_MIN_PIN, Z_MAX_PIN, endstopHitZ, Z, endstopCountZ);
   }
 }
 
