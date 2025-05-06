@@ -119,7 +119,7 @@ class Commands:
         # print(command + "\n")
         os.system(command)
 
-    def process_data(self, full_out_name: str) -> None:
+    def process_data(self, full_out_name: str, split_time: float = -1) -> None:
         data_type_mapping = {
             "coincidence": ("_coinc", "./convert_raw_to_coincidence"),
             "single": ("_single", "./convert_raw_to_single"),
@@ -142,11 +142,12 @@ class Commands:
             if self.dictionary["data_compact"]
             else full_out_name + sufix
         )
+        split_string = f"--splitTime {split_time}" if split_time > 0 else ""
         command = (
             f"{process_command} --config {self.dictionary['config_directory']}config.ini "
             f"-i {full_out_name} "
             f"-o {process_out_name} "
-            f"--writeMultipleHits {self.dictionary['hits']} {output_format}"
+            f"--writeMultipleHits {self.dictionary['hits']} {output_format} {split_string} "
         )
 
         # print(command + "\n")

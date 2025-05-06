@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """Run the scan with the parameters specified in the YAMLCONF file for any
-PETsys setup. 
+PETsys setup.
 Usage: main.py YAMLCONF [-m MODE]
 
 Arguments:
@@ -46,7 +46,7 @@ def confirm_file_deletion(file_path: str) -> None:
             print(f"Appending to the end of the file with new elements.")
 
 
-def process_files(petsys_commands: Commands, file_path: str) -> None:
+def process_files(petsys_commands: Commands, file_path: str, split_time: float) -> None:
     with open(file_path, "r") as f:
         next(f)  # Skip the header
         file_names = [line.split("\t")[0].strip() for line in f]
@@ -61,7 +61,7 @@ def process_files(petsys_commands: Commands, file_path: str) -> None:
         # Record the start time of the iteration
         start_time = time.time()
 
-        petsys_commands.process_data(full_out_name)
+        petsys_commands.process_data(full_out_name, split_time=split_time)
 
         # Record the end time of the iteration, and add it to the list
         end_time = time.time()
@@ -108,8 +108,8 @@ def acquire_data_scan(
         # Record the start time of the iteration
         start_time = time.time()
 
-        bias_settings.set_overvoltage(v)
-        bias_settings.write_bias_settings()
+        # bias_settings.set_overvoltage(v)
+        # bias_settings.write_bias_settings()
         v_bias = v + yaml_dict["break_voltage"]
 
         disc_settings.set_threshold(t1, "vth_t1")
@@ -144,7 +144,7 @@ def acquire_data_scan(
                 f.write(
                     file_dir
                     + "\t"
-                    + "\t".join(str(m.current_position_mm) for m in scan_config.motors)
+                    + "\t".join(str(m.current_position) for m in scan_config.motors)
                     + "\n"
                 )
             else:
@@ -169,7 +169,7 @@ def acquire_data_scan(
 
 
 def print_motor_position(motor: MotorControl) -> None:
-    print(f"Motor '{motor.motor_name}' moved to {motor.current_position_mm}mm")
+    print(f"Motor '{motor.motor_name}' moved to {motor.current_position} mm/degree")
 
 
 def move_motors_to_home_and_close(motors: List[MotorControl]) -> None:
@@ -192,7 +192,7 @@ def move_motors_and_acquire_data(
         f.write(
             "file_name"
             + "\t"
-            + "\t".join(str(m.motor_name) + "_mm" for m in motors)
+            + "\t".join(str(m.motor_name) + "_mm/rev" for m in motors)
             + "\n"
         )
 
@@ -232,7 +232,7 @@ if __name__ == "__main__":
 
     # create the bias and discriminator settings objects with the reference detector parameters
     bias_settings = BiasSettings(yaml_dict, bias_ref_params)
-    bias_settings.set_fixedvoltages()
+    # bias_settings.set_fixedvoltages()
     disc_settings = DiscSettings(yaml_dict, disc_ref_params)
     disc_settings.set_fixedthresholds()
 
@@ -263,6 +263,8 @@ if __name__ == "__main__":
     petsys_directory = yaml_dict["petsys_directory"]
     os.chdir(petsys_directory)
 
+    split_time = yaml_dict["split_time"]
+
     if mode == "acquire" or mode == "both":
         confirm_file_deletion(log_file)
 
@@ -290,8 +292,8 @@ if __name__ == "__main__":
                     motors_serial, motor_config, motor_name=motor_name, motor_id=i + 1
                 )
                 motors.append(motor)
-            for motor in motors:
-                motor.find_home()
+            # for motor in motors:
+            #     motor.find_home()
             motor_scan_conf = ScanConfig(
                 bias_settings, disc_settings, yaml_dict, log_file, iterables, motors
             )
@@ -299,9 +301,9 @@ if __name__ == "__main__":
             close_motors(motors)
 
         if mode == "both":
-            process_files(petsys_commands, log_file)
+            process_files(petsys_commands, log_file, split_time)
     elif mode == "process":
-        process_files(petsys_commands, log_file)
+        process_files(petsys_commands, log_file, split_time)
     else:
         print("Mode [-m] not valid. You can choose 'acquire', 'process' o 'both'")
     # change back to the original directory
