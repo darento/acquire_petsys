@@ -24,11 +24,11 @@ from src.motor_control import MotorControl
 from src.motor_control import find_serial_port
 
 
-def time_to_steps(motor: MotorControl, motion_time_s: float) -> int:
+def time_to_steps(motor_speed: float, motion_time_s: float) -> int:
     """
     Calculate the number of steps required for the motor to move in the given time.
     """
-    return int(motion_time_s * motor.motor_speed)
+    return int(motion_time_s * motor_speed)
 
 
 if __name__ == "__main__":
@@ -74,6 +74,6 @@ if __name__ == "__main__":
     for motor in motors:
         if motor.motor_name == motor_name:
             # Convert the motion time in seconds to steps
-            steps = time_to_steps(motor, motion_time_s)
+            steps = time_to_steps(yaml_dict["motorX"]["speed"], motion_time_s)
             motor.move_motor(direction, steps)
             motor.close()
