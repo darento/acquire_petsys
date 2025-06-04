@@ -12,7 +12,7 @@ from src.config import MotorConfig
 STEPS_PER_REV = 200  # for a 1.8° stepper motor
 BAUDRATE = 9600
 TIMEOUT = 5
-WHILE_TIMEOUT = 300  # 5 minutes timeout for while loops
+__WHILE_TIMEOUT = 300  # 5 minutes timeout for while loops unused
 
 
 class MotorControl:
@@ -67,6 +67,7 @@ class MotorControl:
         self.motor_start = motor_config.start
         self.motor_end = motor_config.end
         self.motor_step_size = motor_config.step_size
+        self.while_timeout = motor_config.while_timeout
         self.current_position = self.motor_start  # Initialize at start position
         self.total_steps_required = 0
         self.steps_moved = 0
@@ -85,7 +86,7 @@ class MotorControl:
             start_time = time.time()
             response = ""
             while not response.endswith("F"):
-                if time.time() - start_time > WHILE_TIMEOUT:
+                if time.time() - start_time > self.while_timeout:
                     self.logger.error("Timeout waiting for response")
                     raise TimeoutError("Timeout waiting for response from motor")
                 response += self.ser.read_until(b"F").decode().strip()
@@ -121,19 +122,18 @@ class MotorControl:
         self._write_command(command)
         self.logger.info(f"Motor {self.motor_name} acceleration set to {acceleration}")
 
-    def move_motor(self, direction: int, position: int) -> None:
+    def move_motor(self, direction: int, steps: int) -> None:
         """Send move command (mm or degrees) to the specified motor."""
-        steps = self.position_to_steps(position)
         command = self._format_command("MOVE", self.motor_id, direction, steps)
         self._write_command(command)
-        self.current_position += position
+        direction = -1 if direction == 0 else 1
+        self.current_position += steps * direction
 
-    def move_motor_to(self, position: int) -> None:
+    def move_motor_to(self, steps: int) -> None:
         """Send move to command (mm or degrees) to the specified motor."""
-        steps = self.position_to_steps(position)
         command = self._format_command("MOVETO", self.motor_id, steps)
         self._write_command(command)
-        self.current_position = position
+        self.current_position = steps
 
     def stop_motor(self) -> None:
         """Send stop command to a specified motor."""
@@ -175,7 +175,7 @@ class MotorControl:
         elif self.motor_type == "rotatory":
             degrees_per_rev = 360
             target_revs = (
-                position / degrees_per_rev * 10
+                position / degrees_per_rev * self.motor_relation
             )  # looks like there is a 10:1 gear ratio in the rotor motor
         else:
             raise ValueError(f"Motor type {self.motor_type} unknown.")

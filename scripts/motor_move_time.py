@@ -4,13 +4,13 @@
 Move the motor to the desired position.
 
 Usage:
-    move_to.py <YAMLCONF> <motorname> <position_mm> <direction>
+    motor_move_time.py <YAMLCONF> <motorname> <motion_time_s> <direction>
 
 Arguments:
-    YAMLCONF     File with all parameters to take into account in the scan.
-    motorname    Name of the motor to move. Must be motorX, motorY or motorZ.
-    position_mm  Desired position for the motor in millimeters.
-    direction    Direction to move the motor. Must be 1 (forward) or 0 (backward).
+    YAMLCONF       File with all parameters to take into account in the scan.
+    motorname      Name of the motor to move. Must be motorX, motorY or motorZ.
+    motion_time_s  Desired motion time for the motor in seconds.
+    direction      Direction to move the motor. Must be 1 (forward) or 0 (backward).
 
 Options:
     -h --help     Show this screen.
@@ -23,11 +23,19 @@ from src.config import MotorConfig, validate_yaml_dict
 from src.motor_control import MotorControl
 from src.motor_control import find_serial_port
 
+
+def time_to_steps(motor: MotorControl, motion_time_s: float) -> int:
+    """
+    Calculate the number of steps required for the motor to move in the given time.
+    """
+    return int(motion_time_s * motor.motor_speed)
+
+
 if __name__ == "__main__":
     args = docopt(__doc__)
     yaml_conf = args["<YAMLCONF>"]
     motor_name = args["<motorname>"]
-    position_mm = float(args["<position_mm>"])
+    motion_time_s = float(args["<motion_time_s>"])
     direction = int(args["<direction>"])
 
     # Check that the direction is valid
@@ -56,14 +64,16 @@ if __name__ == "__main__":
     motors = []
     for i in range(yaml_dict["num_motors"]):
         motor_name_loop = f"motor{chr(88 + i)}"  # 88 is ASCII for 'X'
-        motor_config = MotorConfig(yaml_dict[motor_name_loop])
+        motor_config = MotorConfig(
+            yaml_dict[motor_name_loop], int(motion_time_s + 60)
+        )  # Add 60 seconds to the motion time for safety
         motor = MotorControl(motors_serial, motor_config, motor_name_loop, i + 1)
         motors.append(motor)
 
     # Move the motor to the desired position
     for motor in motors:
         if motor.motor_name == motor_name:
-            # Convert the position in mm to steps
-            position_steps = motor.position_to_steps(position_mm)
-            motor.move_motor(direction, position_steps)
+            # Convert the motion time in seconds to steps
+            steps = time_to_steps(motor, motion_time_s)
+            motor.move_motor(direction, steps)
             motor.close()

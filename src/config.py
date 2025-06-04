@@ -6,7 +6,7 @@ import os
 
 
 class MotorConfig:
-    def __init__(self, config: Dict[str, Any]) -> None:
+    def __init__(self, config: Dict[str, Any], while_timer: int = 300) -> None:
         self.relation = config["relation"]
         self.microstep = config["microstep"]
         self.start = config["start"]
@@ -16,6 +16,7 @@ class MotorConfig:
         self.max_speed = config["max_speed"]
         self.acceleration = config["acceleration"]
         self.type = config["type"]
+        self.while_timeout = config.get("while_timeout", while_timer)
 
 
 class ScanConfig:
