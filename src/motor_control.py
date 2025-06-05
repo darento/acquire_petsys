@@ -124,16 +124,17 @@ class MotorControl:
 
     def move_motor(self, direction: int, steps: int) -> None:
         """Send move command (mm or degrees) to the specified motor."""
+        print(
+            f"Moving {self.motor_name} {'forward' if direction > 0 else 'backward'} by {steps} steps..."
+        )
         command = self._format_command("MOVE", self.motor_id, direction, steps)
         self._write_command(command)
-        direction = -1 if direction == 0 else 1
-        self.current_position += steps * direction
 
     def move_motor_to(self, steps: int) -> None:
         """Send move to command (mm or degrees) to the specified motor."""
+        print(f"Moving {self.motor_name} to {steps} steps...")
         command = self._format_command("MOVETO", self.motor_id, steps)
         self._write_command(command)
-        self.current_position = steps
 
     def stop_motor(self) -> None:
         """Send stop command to a specified motor."""
@@ -170,6 +171,7 @@ class MotorControl:
 
     def position_to_steps(self, position: float) -> int:
         """Convert the position (mm or degrees) into steps."""
+        self.current_position = position  # Update current position
         if self.motor_type == "linear":
             target_revs = position / self.motor_relation
         elif self.motor_type == "rotatory":

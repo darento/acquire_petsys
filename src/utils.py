@@ -17,7 +17,7 @@ def estimate_remaining_time(
 
     hours, remainder = divmod(estimated_remaining_time, 3600)
     minutes, seconds = divmod(remainder, 60)
-    time_string = f"Estimated remaining time for {string_process}: {int(hours)}:{int(minutes)}:{round(seconds, 1)}"
+    time_string = f"Estimated remaining time for {string_process}: {int(hours)}:{int(minutes):02d}:{int(seconds):02d}"
     colored_string = colored(time_string, "green")
 
     print(colored_string)

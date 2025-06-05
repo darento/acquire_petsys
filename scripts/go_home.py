@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Move the motor to the home position. Reverse the direction of the motor if it is not moving in the right direction. 
+"""Move the motor to the home position. Reverse the direction of the motor if it is not moving in the right direction.
 Usage: go_home.py YAMLCONF
 
 Arguments:
@@ -27,7 +27,8 @@ if __name__ == "__main__":
     validate_yaml_dict(yaml_dict)
 
     # Find the motor port
-    motors_serial = find_serial_port()
+    com_port = yaml_dict["COM_port"]
+    motors_serial = find_serial_port(com_port)
 
     # Create a MotorControl instance for each motor
     motors = []
