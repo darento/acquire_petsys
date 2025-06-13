@@ -186,6 +186,8 @@ class MotorControl:
 
     def array_of_positions(self) -> np.array:
         """Create an array of absolute positions (mm or degrees)."""
+        if self.motor_start == self.motor_end:
+            return np.array([self.motor_start])
         positions = np.arange(
             self.motor_start,
             self.motor_end + self.motor_step_size,

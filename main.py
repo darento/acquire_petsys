@@ -30,6 +30,12 @@ from src.utils import estimate_remaining_time
 from src.motor_control import MotorControl
 from src.motor_control import find_serial_port
 
+MOTORS_ID = {
+    "motorX": 1,
+    "motorY": 2,
+    "motorZ": 3,
+}
+
 
 def confirm_file_deletion(file_path: str) -> None:
     if os.path.exists(file_path):
@@ -120,6 +126,7 @@ def acquire_data_scan(
         print(
             f"Setting bias to {v_bias}V, T1 to {t1}, T2 to {t2}, E to {e} at iteration {it}"
         )
+        acq_time = scan_config.yaml_dict["time"]
 
         # Check if the motor is present
         if step >= 0:
@@ -132,12 +139,12 @@ def acquire_data_scan(
             full_out_name = scan_config.yaml_dict[
                 "out_name"
             ] + "_it{}_{}V_{}T1_{}T2_{}E".format(it, v_bias, t1, t2, e)
-
+        full_out_name += f"_{int(acq_time)}s"
         file_dir = scan_config.yaml_dict["out_directory"] + full_out_name
         petsys_commands.acquire_data(full_out_name)
 
         print("------------------------------------------")
-        time.sleep(1)
+        time.sleep(2)
 
         with open(log_file, "a") as f:
             if step >= 0:
@@ -192,17 +199,18 @@ def move_motors_and_acquire_data(
         f.write(
             "file_name"
             + "\t"
-            + "\t".join(str(m.motor_name) + "_mm/rev" for m in motors)
+            + "\t".join(str(m.motor_name) + "_mm/rev" for m in scan_config.motors)
             + "\n"
         )
 
     # Create an array of absolute positions
-    position_matrix = product(*[m.array_of_positions() for m in motors])
+    position_matrix = product(*[m.array_of_positions() for m in scan_config.motors])
 
     # Iterate over all the possible combinations of the iterables
     for it, positions in enumerate(position_matrix):
         for motor, position in zip(scan_config.motors, positions):
-            motor.move_motor_to(position)
+            steps = motor.position_to_steps(position)
+            motor.move_motor_to(steps)
             print_motor_position(motor)
         if it < step_ini:
             continue
@@ -269,7 +277,7 @@ if __name__ == "__main__":
         confirm_file_deletion(log_file)
 
         # Check if the motor flag is set to True
-        if not yaml_dict["motor"]:
+        if not yaml_dict["flag_motor"]:
             # Open the log file and write the header
             with open(log_file, "a") as f:
                 f.write("file_name" + "\n")
@@ -281,19 +289,28 @@ if __name__ == "__main__":
         else:
             pos_ini = yaml_dict.get("pos_ini", 0)
             # Find the motors port
-            motors_serial = find_serial_port()
+            if not yaml_dict["COM_port"]:
+                print(
+                    "No COM port specified in the YAML file. Finding the first available serial port."
+                )
+            com_port = yaml_dict["COM_port"]
+            motors_serial = find_serial_port(com_port)
 
             # Create a MotorControl instance for each motor
+            motors_active = [key for key in yaml_dict if key.startswith("motor")]
             motors = []
-            for i in range(yaml_dict["num_motors"]):
-                motor_name = f"motor{chr(88 + i)}"  # 88 is ASCII for 'X'
+            for motor_name in motors_active:
+                # motor_name = f"motor{chr(88 + i)}"  # 88 is ASCII for 'X'
                 motor_config = MotorConfig(yaml_dict[motor_name])
                 motor = MotorControl(
-                    motors_serial, motor_config, motor_name=motor_name, motor_id=i + 1
+                    motors_serial,
+                    motor_config,
+                    motor_name=motor_name,
+                    motor_id=MOTORS_ID[motor_name],
                 )
                 motors.append(motor)
-            # for motor in motors:
-            #     motor.find_home()
+            for motor in motors:
+                motor.find_home()
             motor_scan_conf = ScanConfig(
                 bias_settings, disc_settings, yaml_dict, log_file, iterables, motors
             )

@@ -17,6 +17,12 @@ from src.config import MotorConfig, validate_yaml_dict
 from src.motor_control import MotorControl
 from src.motor_control import find_serial_port
 
+MOTORS_ID = {
+    "motorX": 1,
+    "motorY": 2,
+    "motorZ": 3,
+}
+
 if __name__ == "__main__":
     args = docopt(__doc__)
     yaml_conf = args["YAMLCONF"]
@@ -31,11 +37,17 @@ if __name__ == "__main__":
     motors_serial = find_serial_port(com_port)
 
     # Create a MotorControl instance for each motor
+    motors_active = [key for key in yaml_dict if key.startswith("motor")]
     motors = []
-    for i in range(yaml_dict["num_motors"]):
-        motor_name = f"motor{chr(88 + i)}"  # 88 is ASCII for 'X'
-        motor_config = MotorConfig(yaml_dict[motor_name])
-        motor = MotorControl(motors_serial, motor_config, motor_name, i + 1)
+    for motor_name_loop in motors_active:
+        # motor_name = f"motor{chr(88 + i)}"  # 88 is ASCII for 'X'
+        motor_config = MotorConfig(yaml_dict[motor_name_loop])
+        motor = MotorControl(
+            motors_serial,
+            motor_config,
+            motor_name=motor_name_loop,
+            motor_id=MOTORS_ID[motor_name_loop],
+        )
         motors.append(motor)
     for motor in motors:
         motor.find_home()
