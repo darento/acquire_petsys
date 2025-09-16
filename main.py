@@ -36,6 +36,9 @@ MOTORS_ID = {
     "motorZ": 3,
 }
 
+ACQ_ATTEMPTS = 3  # number of attempts to acquire data if it fails
+PCT_LOST_THRESHOLD = 5  # percentage of lost data to consider the acquisition successful
+
 
 def confirm_file_deletion(file_path: str) -> None:
     if os.path.exists(file_path):
@@ -141,7 +144,26 @@ def acquire_data_scan(
             ] + "_it{}_{}V_{}T1_{}T2_{}E".format(it, v_bias, t1, t2, e)
         full_out_name += f"_{int(acq_time)}s"
         file_dir = scan_config.yaml_dict["out_directory"] + full_out_name
-        petsys_commands.acquire_data(full_out_name)
+
+        attempt = 0
+        while attempt < ACQ_ATTEMPTS:
+            attempt += 1
+            lost_info = petsys_commands.acquire_data(full_out_name)
+            print(f"Data lost info: {lost_info}")
+            if lost_info["lost_percent"] < PCT_LOST_THRESHOLD:
+                print(
+                    f"Acquisition successful with {lost_info['lost_percent']}% data lost."
+                )
+                break
+            if attempt < ACQ_ATTEMPTS:
+                print(
+                    f"Lost percent {lost_info['lost_percent']}% > {PCT_LOST_THRESHOLD}% -> retrying acquisition..."
+                )
+                time.sleep(2)
+            else:
+                print(
+                    f"Lost percent {lost_info['lost_percent']}% > {PCT_LOST_THRESHOLD}% after {ACQ_ATTEMPTS} attempts -> giving up and continuing."
+                )
 
         print("------------------------------------------")
         time.sleep(2)
@@ -217,7 +239,7 @@ def move_motors_and_acquire_data(
         acquire_data_scan(
             scan_config,
             time_sleep,
-            step=it + step_ini,
+            step=it,
         )
 
 
@@ -278,6 +300,7 @@ if __name__ == "__main__":
 
         # Check if the motor flag is set to True
         if not yaml_dict["flag_motor"]:
+            print("No motors will be used in this scan.")
             # Open the log file and write the header
             with open(log_file, "a") as f:
                 f.write("file_name" + "\n")
@@ -299,6 +322,7 @@ if __name__ == "__main__":
             # Create a MotorControl instance for each motor
             motors_active = [key for key in yaml_dict if key.startswith("motor")]
             motors = []
+            print(motors_active)
             for motor_name in motors_active:
                 # motor_name = f"motor{chr(88 + i)}"  # 88 is ASCII for 'X'
                 motor_config = MotorConfig(yaml_dict[motor_name])
