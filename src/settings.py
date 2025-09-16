@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import pandas as pd
 import shutil
@@ -115,9 +116,38 @@ class Commands:
             f"--mode {self.dictionary['mode']} --time {self.dictionary['time']} "
             f"-o {self.dictionary['out_directory']}{full_out_name} {hw_trigger}"
         )
+        # Regex to capture "all events were lost for 1 (  0.0%) frames"
+        pattern = re.compile(
+            r"all events were lost for\s+(\d+)\s*\(\s*([\d\.]+)%\)\s*frames",
+            re.IGNORECASE,
+        )
+
+        lost_info = None
+        process = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+        try:
+            for line in process.stdout:
+                print(line, end="")  # Print the output line by line
+                match = pattern.search(line)
+                if match:
+                    lost_info = {
+                        "lost_frames": int(match.group(1)),
+                        "lost_percent": float(match.group(2)),
+                        "matched_line": line.strip(),
+                    }
+        finally:
+            process.stdout.close()
+            process.wait()
+        return lost_info
 
         # print(command + "\n")
-        os.system(command)
+        # os.system(command)
 
     def process_data(self, full_out_name: str, split_time: float = -1) -> None:
         data_type_mapping = {
